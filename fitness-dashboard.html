@@ -130,17 +130,84 @@
         }
 
         .pdf-export-mode #pdf-date-header { display: block !important; }
+
+        /* Ocultar scrollbars en modales de onboarding */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Estilos para el Login */
+        #auth-container {
+            background: radial-gradient(circle at top right, #1e293b, #020617);
+        }
+        .auth-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 2.5rem;
+            border-radius: 2.5rem;
+        }
     </style>
 </head>
 <body class="bg-[#020617] text-slate-100 min-h-screen flex flex-col md:flex-row">
+
+    <!-- Overlay para la barra lateral en móvil -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[140] hidden"></div>
+
+    <!-- Barra Superior Móvil -->
+    <div id="mobile-top-bar" class="md:hidden hidden items-center gap-4 p-4 bg-[#020617] border-b border-white/5 sticky top-0 z-[60] no-export">
+        <button onclick="toggleSidebar()" class="p-2 bg-white/5 rounded-xl border border-white/10 text-slate-400">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+        <div class="flex items-center gap-3">
+            <div class="accent-gradient p-2 rounded-xl">
+                <i data-lucide="activity" class="text-slate-950 w-5 h-5"></i>
+            </div>
+            <span class="font-bold tracking-tighter">PowerPlan PRO</span>
+        </div>
+    </div>
+
+    <!-- Pantalla de Autenticación -->
+    <div id="auth-screen" class="fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-y-auto">
+        <div id="auth-container" class="fixed inset-0"></div>
+        <div class="auth-card glass-card relative z-10 border border-white/10 shadow-2xl">
+            <div class="text-center mb-8">
+                <div class="accent-gradient w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-lime-500/20">
+                    <i data-lucide="activity" class="text-slate-950 w-8 h-8"></i>
+                </div>
+                <h1 id="auth-title" class="text-3xl font-black tracking-tighter">PowerPlan PRO</h1>
+                <p id="auth-subtitle" class="text-slate-400 text-sm mt-2 font-medium">Panel para Entrenadores</p>
+            </div>
+
+            <form id="auth-form" class="space-y-4">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 px-2">Email Profesional</label>
+                    <input type="email" id="auth-email" required class="w-full bg-slate-900/50 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-sm" placeholder="coach@powerplan.com">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 px-2">Contraseña</label>
+                    <input type="password" id="auth-password" required class="w-full bg-slate-900/50 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-sm" placeholder="••••••••">
+                </div>
+                <button type="submit" id="auth-submit" class="w-full accent-gradient text-slate-950 font-extrabold py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-transform mt-4">
+                    Entrar al Dashboard
+                </button>
+            </form>
+
+            <div class="mt-8 pt-6 border-t border-white/5 text-center">
+                <p class="text-slate-400 text-xs">¿No tienes cuenta de coach?</p>
+                <button onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-lime-400 font-bold text-xs mt-2 hover:underline">Regístrate como Entrenador</button>
+            </div>
+        </div>
+    </div>
     
     <!-- Sidebar de Gestión (Para Entrenadores) -->
-    <aside class="w-full md:w-80 border-r border-slate-800/50 bg-[#020617] p-6 space-y-8 h-screen sticky top-0 overflow-y-auto z-50">
+    <aside id="main-sidebar" class="hidden fixed md:sticky inset-y-0 left-0 z-[150] w-72 md:w-80 border-r border-slate-800/50 bg-[#020617] p-6 space-y-8 h-screen top-0 overflow-y-auto transition-transform duration-300 -translate-x-full md:translate-x-0">
         <div class="space-y-6">
-            <div class="flex items-center gap-3 mb-8">
+            <div class="flex items-center justify-between mb-8">
                 <div class="accent-gradient p-2 rounded-xl shadow-lg shadow-lime-500/20">
                     <i data-lucide="activity" class="text-slate-950 w-6 h-6"></i>
                 </div>
+                <button onclick="toggleSidebar()" class="md:hidden p-2 text-slate-500 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
             </div>
 
             <!-- Buscador de Alumnos -->
@@ -163,10 +230,13 @@
             <button onclick="isEditingStudent = false; openModal('modal-new-student')" class="w-full accent-gradient text-slate-950 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-lime-500/10 hover:scale-[1.02] transition-transform">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i> Nuevo Alumno
             </button>
+            <button onclick="handleLogout()" class="w-full mt-4 bg-slate-900 border border-slate-800 text-slate-400 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-xs hover:bg-rose-500/10 hover:text-rose-500 transition-all">
+                <i data-lucide="log-out" class="w-4 h-4"></i> Cerrar Sesión
+            </button>
         </div>
     </aside>
 
-    <main class="flex-1 max-w-7xl mx-auto px-4 py-8 md:px-6 lg:py-10 space-y-8">
+    <main id="main-content" class="hidden flex-1 max-w-7xl mx-auto px-4 py-8 md:px-6 lg:py-10 space-y-8">
         
         <!-- Navegación Superior -->
         <div class="flex justify-between items-center mb-4">
@@ -182,8 +252,8 @@
                 <button onclick="exportPlanToPDF()" class="bg-lime-400 text-slate-950 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:scale-105 transition-all no-export">
                     <i data-lucide="download" class="w-4 h-4"></i> Exportar PDF
                 </button>
-                <button class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors no-export">
-                <i data-lucide="settings" class="w-4 h-4 text-slate-400"></i> Ajustes de Plan
+                <button onclick="openModal('modal-account-settings')" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors no-export">
+                <i data-lucide="settings" class="w-4 h-4 text-slate-400"></i> Ajustes
                 </button>
             </div>
         </div>
@@ -196,9 +266,9 @@
 
         <!-- 1. ENCABEZADO DEL PERFIL (ALUMNO) -->
         <header class="glass-card rounded-[2rem] p-6 md:p-8 flex flex-col lg:flex-row gap-8 items-center border-t border-white/10">
-            <div class="relative">
+            <div class="relative group/avatar">
                 <div class="w-32 h-32 rounded-3xl overflow-hidden border-4 border-lime-400/20 ring-1 ring-white/10">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos" alt="Alumno" class="w-full h-full object-cover bg-slate-900">
+                    <img id="header-avatar" src="" alt="Alumno" class="w-full h-full object-cover bg-slate-900">
                 </div>
                 <div class="absolute -bottom-3 -right-3 bg-lime-400 text-slate-950 p-2 rounded-xl shadow-xl">
                     <i data-lucide="check-circle" class="w-5 h-5"></i>
@@ -220,7 +290,7 @@
                 
                 <div id="header-coach-info" class="hidden">
                     <p class="text-slate-400 font-medium flex items-center justify-center lg:justify-start gap-2 mt-1">
-                        <i data-lucide="shield-check" class="w-4 h-4 text-lime-400"></i> Coach Asignado: Marcos "Titan" Ramos
+                        <i data-lucide="shield-check" class="w-4 h-4 text-lime-400"></i> Entrenador: <span id="display-coach-name" class="font-bold text-slate-200">...</span>
                     </p>
                 </div>
                 
@@ -611,6 +681,114 @@
         </div>
     </div>
 
+    <!-- MODAL: ONBOARDING (BIENVENIDA) -->
+    <div id="modal-onboarding" class="fixed inset-0 bg-slate-950 z-[300] hidden items-center justify-center p-4 overflow-y-auto no-scrollbar">
+        <div class="glass-card w-full max-w-2xl rounded-[3rem] p-10 border border-white/10 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-10 opacity-5">
+                <i data-lucide="sparkles" class="w-40 h-40 text-lime-400"></i>
+            </div>
+            
+            <div class="text-center mb-10">
+                <h2 class="text-4xl font-black tracking-tighter mb-2 italic">¡BIENVENIDO A <span class="text-lime-400">POWERPLAN</span>!</h2>
+                <p class="text-slate-400 font-medium">Configura tu perfil profesional para empezar.</p>
+            </div>
+
+            <form id="onboarding-form" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest px-2">¿Cómo te llamas?</label>
+                        <input type="text" id="onboarding-name" required placeholder="Tu nombre completo" class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-5 focus:outline-none focus:border-lime-400 transition-all">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest px-2">¿Cuál es tu rol?</label>
+                        <select id="onboarding-role" class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-5 focus:outline-none focus:border-lime-400 transition-all text-slate-300 font-bold">
+                            <option value="coach">Soy Entrenador (Gestiono Clientes)</option>
+                            <option value="user">Uso Personal (Solo para mí)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bg-white/5 p-6 rounded-[2rem] border border-white/5 space-y-6">
+                    <p class="text-xs font-bold text-lime-400 uppercase tracking-widest text-center">Tus datos básicos (Para tu primer perfil)</p>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-500 uppercase px-2">Peso (kg)</label>
+                            <input type="number" step="0.1" id="onboarding-weight" required placeholder="70" class="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-500 uppercase px-2">Estatura (cm)</label>
+                            <input type="number" id="onboarding-height" required placeholder="170" class="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-500 uppercase px-2">Edad</label>
+                            <input type="number" id="onboarding-age" required placeholder="25" class="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full accent-gradient text-slate-950 font-black py-5 rounded-3xl shadow-xl hover:scale-[1.02] transition-transform text-lg uppercase tracking-tighter">
+                    Finalizar y Crear mi Perfil
+                </button>
+            </form>
+
+            <!-- Botón de escape por si la sesión es huérfana -->
+            <div class="mt-8 pt-6 border-t border-white/5 text-center">
+                <button onclick="handleLogout()" class="text-slate-500 hover:text-rose-400 text-xs font-bold transition-colors">
+                    ¿No eres tú? <span class="underline">Cerrar sesión y volver al inicio</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: AJUSTES DE CUENTA -->
+    <div id="modal-account-settings" onclick="closeModal('modal-account-settings')" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-[2.5rem] p-8 border border-white/10 shadow-2xl" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="text-2xl font-black italic text-white flex items-center gap-3">
+                    <i data-lucide="settings" class="text-lime-400"></i> Ajustes
+                </h3>
+                <button onclick="closeModal('modal-account-settings')" class="p-2 hover:bg-white/5 rounded-full transition-colors text-slate-500">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <form id="settings-form" class="space-y-6">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 px-2">Tu Nombre Público</label>
+                    <input type="text" id="settings-name" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-white">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 px-2">Tu Rol</label>
+                    <select id="settings-role" class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-slate-300">
+                        <option value="coach">Entrenador</option>
+                        <option value="user">Uso Personal</option>
+                    </select>
+                </div>
+                <div class="pt-4">
+                    <button type="submit" class="w-full accent-gradient text-slate-950 font-bold py-4 rounded-2xl shadow-lg hover:scale-[1.01] transition-transform uppercase tracking-widest text-xs">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NOTIFICACIÓN MODERNA (SUCCESS) -->
+    <div id="onboarding-success-popup" class="fixed bottom-10 right-10 z-[400] hidden">
+        <div class="glass-card bg-slate-900/90 border-lime-400/30 rounded-3xl p-6 flex items-center gap-5 shadow-2xl animate-bounce">
+            <div class="bg-lime-400 p-3 rounded-2xl">
+                <i data-lucide="rocket" class="text-slate-950 w-6 h-6"></i>
+            </div>
+            <div>
+                <h5 class="text-white font-black text-sm uppercase italic">¡Perfil de Prueba Creado!</h5>
+                <p class="text-slate-400 text-xs mt-1">Hemos usado tus datos para crear tu primer cliente.</p>
+            </div>
+            <button onclick="this.parentElement.parentElement.classList.add('hidden')" class="text-slate-500 hover:text-white ml-4">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </div>
+
     <script>
         // Configuración de Supabase
         const SUPABASE_URL = 'https://maivzxzljgfqiqkvbspd.supabase.co';
@@ -628,8 +806,94 @@
         let baseFoodData = null; // Datos de referencia para el cálculo proporcional
         let editingSupplementId = null;
         let editingNoteId = null;
+        let isSignUp = false;
         
         let activeMeals = []; // Vaciado para usar datos reales
+
+        // --- SISTEMA DE AUTENTICACIÓN ---
+        function toggleAuthMode() {
+            isSignUp = !isSignUp;
+            document.getElementById('auth-title').innerText = isSignUp ? 'Únete a PowerPlan' : 'PowerPlan PRO';
+            document.getElementById('auth-submit').innerText = isSignUp ? 'Crear mi Cuenta' : 'Entrar al Dashboard';
+            document.getElementById('auth-toggle-btn').innerText = isSignUp ? 'Ya tengo cuenta de Coach' : 'Regístrate como Entrenador';
+        }
+
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const submitBtn = document.getElementById('auth-submit');
+            
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Procesando...';
+
+            try {
+                if (isSignUp) {
+                    const { data, error } = await _supabase.auth.signUp({ email, password });
+                    if (error) throw error;
+
+                    if (data?.user && !data?.session) {
+                        alert('¡Registro exitoso! Por favor, verifica tu correo electrónico para activar tu cuenta.');
+                    }
+                    toggleAuthMode();
+                } else {
+                    const { error } = await _supabase.auth.signInWithPassword({ email, password });
+                    if (error) throw error;
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = isSignUp ? 'Crear mi Cuenta' : 'Entrar al Dashboard';
+            }
+        });
+
+        async function handleLogout() {
+            await _supabase.auth.signOut();
+            location.reload();
+        }
+
+        // Escuchar cambios de sesión
+        _supabase.auth.onAuthStateChange((event, session) => {
+            const user = session?.user;
+
+            if (session) {
+                // Si hay sesión pero el usuario no existe en la base de datos (fue borrado manualmente)
+                // o no tiene metadata, mostramos onboarding.
+                if (!user || !user.user_metadata || !user.user_metadata.full_name) {
+                    document.getElementById('auth-screen').classList.add('hidden');
+                    document.getElementById('main-sidebar').classList.add('hidden');
+                    document.getElementById('main-content').classList.add('hidden');
+                    openModal('modal-onboarding');
+                } else {
+                    // Usuario autenticado y con perfil completo
+                    document.getElementById('auth-screen').classList.add('hidden');
+                    document.getElementById('modal-onboarding').classList.add('hidden');
+                    document.getElementById('main-sidebar').classList.remove('hidden');
+                    document.getElementById('main-content').classList.remove('hidden');
+                    
+                    const coachName = user.user_metadata.full_name;
+                    document.getElementById('display-coach-name').innerText = coachName;
+                    document.getElementById('settings-name').value = coachName;
+                    document.getElementById('settings-role').value = user.user_metadata.role || 'coach';
+                    
+                    // Mostrar barra móvil
+                    const mobileBar = document.getElementById('mobile-top-bar');
+                    mobileBar.classList.remove('hidden');
+                    mobileBar.classList.add('flex');
+
+                    init();
+                }
+            } else {
+                // No hay sesión activa: Mostrar pantalla de login
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('main-sidebar').classList.add('hidden');
+                document.getElementById('main-content').classList.add('hidden');
+                document.getElementById('modal-onboarding').classList.add('hidden');
+                document.getElementById('mobile-top-bar').classList.add('hidden');
+                document.getElementById('mobile-top-bar').classList.remove('flex');
+            }
+        });
 
         // Control de Modales
         function openModal(id, mealName = null) {
@@ -651,6 +915,11 @@
                 } else {
                     deleteBtn.classList.remove('hidden');
                 }
+            }
+
+            if (id === 'modal-onboarding') {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
             }
 
             if (id === 'modal-supplement' && !editingSupplementId) {
@@ -679,6 +948,8 @@
                     document.getElementById('student-height').value = student.height;
                     document.getElementById('student-age').value = student.age;
                 } else {
+                    document.getElementById('student-form').reset();
+                    document.getElementById('calorie-preview').classList.add('hidden');
                     title.innerHTML = '<i data-lucide="user-plus"></i> Registrar Nuevo Alumno';
                     submitBtn.innerText = 'Guardar Alumno';
                 }
@@ -741,11 +1012,21 @@
 
         // Cargar Lista de Alumnos
         async function loadStudents() {
-            const { data, error } = await _supabase.from('profiles').select('*');
-            if (error) return console.error(error);
+            const { data: userData, error: userError } = await _supabase.auth.getUser();
+            const user = userData?.user;
+            if (!user || userError) return;
+
+            const { data: profiles, error } = await _supabase.from('profiles')
+                .select('*')
+                .eq('coach_id', user.id);
+                
+            if (error) {
+                console.error("Error al cargar alumnos:", error);
+                return;
+            }
             
-            allStudents = data;
-            renderStudentList(data);
+            allStudents = profiles || [];
+            renderStudentList(allStudents);
             lucide.createIcons();
         }
 
@@ -753,7 +1034,7 @@
             const container = document.getElementById('student-list');
             container.innerHTML = students.map(student => `
                 <button onclick="selectStudent('${student.id}')" class="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 text-left transition-all ${selectedStudentId === student.id ? 'bg-lime-400/10 border border-lime-400/20 text-lime-400' : 'text-slate-300'}">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${student.full_name}" class="w-8 h-8 rounded-lg bg-slate-800">
+                    <img src="${getAvatarUrl(student.full_name)}" class="w-8 h-8 rounded-lg bg-slate-800 shadow-sm">
                     <div>
                         <p class="text-sm font-bold">${student.full_name}</p>
                         <p class="text-[10px] text-slate-500">${student.objective} • ${student.current_weight}kg</p>
@@ -789,11 +1070,17 @@
             document.getElementById('header-height').innerHTML = `${currentStudent.height}<span class="text-xs font-normal text-slate-400 ml-0.5">cm</span>`;
             document.getElementById('header-age').innerHTML = `${currentStudent.age}<span class="text-xs font-normal text-slate-400 ml-0.5">añ.</span>`;
 
+            // Actualizar avatar del header
+            document.getElementById('header-avatar').src = getAvatarUrl(currentStudent.full_name);
+
             const objectiveEl = document.querySelector('header span.text-lime-400.font-bold.uppercase.text-sm');
             if(objectiveEl) objectiveEl.innerText = currentStudent.objective || 'Sin objetivo';
 
             renderStudentList(allStudents); // Refrescar para visualización de seleccionado
             await fetchStudentData(id);
+            
+            // Cerrar sidebar en móvil tras seleccionar
+            if (window.innerWidth < 768) toggleSidebar();
         }
 
         async function updateManualCalories() {
@@ -1398,6 +1685,9 @@
         // Envío de Formulario de Alumno
         document.getElementById('student-form').onsubmit = async (e) => {
             e.preventDefault();
+            const { data: userData, error: userError } = await _supabase.auth.getUser();
+            const user = userData?.user;
+            if (!user || userError) return alert("Sesión no válida");
 
             const studentData = {
                 full_name: document.getElementById('student-name').value,
@@ -1407,7 +1697,8 @@
                 current_weight: parseFloat(document.getElementById('student-weight').value),
                 height: parseFloat(document.getElementById('student-height').value),
                 age: parseInt(document.getElementById('student-age').value),
-                target_calories: calculateHarrisBenedict()
+                target_calories: calculateHarrisBenedict(),
+                coach_id: user.id
             };
             
             console.log("Registrando alumno en Supabase...", studentData);
@@ -1435,6 +1726,85 @@
                 }
             }
             isEditingStudent = false;
+        };
+
+        // Envío de Onboarding (Registro inicial de datos)
+        document.getElementById('onboarding-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const { data: userData, error: userError } = await _supabase.auth.getUser();
+            const user = userData?.user;
+            if (!user || userError) return alert("Sesión no válida");
+            
+            const fullName = document.getElementById('onboarding-name').value;
+            const role = document.getElementById('onboarding-role').value;
+            
+            // 1. Actualizar metadata del usuario auth
+            const { error: authError } = await _supabase.auth.updateUser({
+                data: { 
+                    full_name: fullName,
+                    role: role,
+                    onboarding_complete: true 
+                }
+            });
+
+            if (authError) return alert(authError.message);
+
+            // 2. Crear primer perfil automáticamente con los datos ingresados
+            const studentData = {
+                full_name: fullName,
+                objective: 'Mantener el peso actual',
+                gender: 'Hombre',
+                activity_level: 'Moderado',
+                current_weight: parseFloat(document.getElementById('onboarding-weight').value),
+                height: parseFloat(document.getElementById('onboarding-height').value),
+                age: parseInt(document.getElementById('onboarding-age').value),
+                coach_id: user.id,
+                avatar_seed: fullName
+            };
+            
+            // Usamos Harris-Benedict interno
+            const kcal = (10 * studentData.current_weight) + (6.25 * studentData.height) - (5 * studentData.age) + 5;
+            studentData.target_calories = Math.round(kcal * 1.55);
+
+            const { data: profileData, error: profileError } = await _supabase.from('profiles').insert([studentData]).select();
+
+            if (profileError) {
+                console.error("Error al crear perfil inicial:", profileError);
+            } else {
+                // Éxito: Mostrar notificación y entrar al dashboard
+                document.getElementById('modal-onboarding').classList.add('hidden');
+                document.getElementById('main-sidebar').classList.remove('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                
+                document.getElementById('onboarding-success-popup').classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('onboarding-success-popup').classList.add('hidden');
+                }, 8000);
+
+                await init();
+                if (profileData && profileData.length > 0) {
+                    selectStudent(profileData[0].id);
+                }
+            }
+        };
+
+        // Guardar Ajustes de Cuenta
+        document.getElementById('settings-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const newName = document.getElementById('settings-name').value;
+            const newRole = document.getElementById('settings-role').value;
+
+            const { error } = await _supabase.auth.updateUser({
+                data: { full_name: newName, role: newRole }
+            });
+
+            if (error) {
+                alert("Error: " + error.message);
+            } else {
+                document.getElementById('display-coach-name').innerText = newName;
+                alert("Ajustes de cuenta actualizados");
+                closeModal('modal-account-settings');
+            }
         };
 
         async function exportPlanToPDF() {
@@ -1479,13 +1849,52 @@
             }
         }
 
-        function init() {
-            document.getElementById('plan-date-selector').value = currentPlanDate;
-            loadStudents();
-            lucide.createIcons();
+        // --- SISTEMA DE AVATARES ---
+        function getAvatarUrl(fullName) {
+            const name = encodeURIComponent(fullName || 'U');
+            const colors = ['65a30d', '0891b2', '4f46e5', '7c3aed', 'c026d3', 'db2777', 'ea580c'];
+            let hash = 0;
+            if (fullName) {
+                for (let i = 0; i < fullName.length; i++) {
+                    hash = fullName.charCodeAt(i) + ((hash << 5) - hash);
+                }
+            }
+            const color = colors[Math.abs(hash) % colors.length];
+            return `https://ui-avatars.com/api/?name=${name}&background=${color}&color=fff&bold=true&size=128`;
         }
 
-        document.addEventListener('DOMContentLoaded', init);
+        function toggleSidebar() {
+            if (window.innerWidth >= 768) return;
+            const sidebar = document.getElementById('main-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const isHidden = sidebar.classList.contains('-translate-x-full');
+
+            if (isHidden) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }
+        }
+
+        async function init() {
+            await loadStudents();
+            lucide.createIcons();
+
+            // Autoseleccionar el primer alumno si existe y no hay ninguno seleccionado
+            if (allStudents.length > 0 && !selectedStudentId) {
+                selectStudent(allStudents[0].id);
+            }
+        }
+
+        // Eliminamos el init automático del DOMContentLoaded para que 
+        // sea el listener de Auth quien decida cuándo arrancar la app.
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('plan-date-selector').value = currentPlanDate;
+        });
     </script>
 </body>
 </html>
