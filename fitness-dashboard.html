@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Nutrición Pro | PowerPlan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-card { 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+        }
+        .accent-gradient {
+            background: linear-gradient(135deg, #bef264 0%, #65a30d 100%);
+        }
+        .progress-ring { transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .modal-active { overflow: hidden; }
+        
+        /* Ocultar el icono nativo de los inputs de tiempo para evitar colisiones con Lucide */
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            display: none;
+            -webkit-appearance: none;
+        }
+
+        /* Estilos de alta legibilidad para el modo PDF */
+        .pdf-export-mode {
+            background: white !important;
+            color: #1e293b !important;
+        }
+        .pdf-export-mode main {
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .pdf-export-mode #pdf-date-header { 
+            display: block !important; 
+            padding: 15px 20px !important;
+            margin-bottom: 10px !important;
+            border-radius: 0 !important;
+        }
+        .pdf-export-mode .glass-card {
+            background: white !important;
+            border: 0.5px solid #cbd5e1 !important;
+            box-shadow: none !important;
+            color: #1e293b !important;
+            backdrop-filter: none !important;
+        }
+        .pdf-export-mode .text-slate-100,
+        .pdf-export-mode .text-slate-200,
+        .pdf-export-mode .text-slate-300 { color: #0f172a !important; }
+        .pdf-export-mode .text-slate-400,
+        .pdf-export-mode .text-slate-500 { color: #334155 !important; }
+        .pdf-export-mode .text-white { color: #0f172a !important; }
+        
+        /* Colores de acento optimizados para fondo blanco (más oscuros para contraste) */
+        .pdf-export-mode .text-lime-400 { color: #365314 !important; } 
+        .pdf-export-mode .text-blue-400 { color: #1e3a8a !important; } 
+        .pdf-export-mode .text-amber-500 { color: #78350f !important; } 
+        .pdf-export-mode .text-rose-400, .pdf-export-mode .text-rose-500 { color: #881337 !important; } 
+        
+        /* Eliminación de fondos oscuros/grises y forzado a blanco puro */
+        .pdf-export-mode .bg-slate-900, 
+        .pdf-export-mode .bg-slate-800,
+        .pdf-export-mode .bg-slate-800\/50,
+        .pdf-export-mode .bg-white\/5,
+        .pdf-export-mode .bg-white\/\[0\.02\],
+        .pdf-export-mode .bg-white\/\[0\.03\],
+        .pdf-export-mode tr,
+        .pdf-export-mode .bg-\[\#020617\],
+        .pdf-export-mode .accent-gradient { 
+            background: white !important; 
+            border: 0.5px solid #cbd5e1 !important;
+        }
+        
+        /* Corregir barra de progreso en el PDF */
+        .pdf-export-mode #calorie-progress-bar { 
+            background: #65a30d !important; 
+            border: none !important;
+        }
+
+        .pdf-export-mode .border-white\/5, .pdf-export-mode .border-white\/10 { border-color: #cbd5e1 !important; }
+        
+        .pdf-export-mode table th { background: #f8fafc !important; color: #0f172a !important; letter-spacing: normal !important; padding: 4px 8px !important; }
+        .pdf-export-mode table td { padding: 8px !important; color: #0f172a !important; }
+        .pdf-export-mode .bg-slate-800.text-slate-300 { background: white !important; border: 0.5px solid #cbd5e1 !important; padding: 2px 6px !important; color: #0f172a !important; }
+
+        .pdf-export-mode .progress-ring { border: 1px solid #cbd5e1 !important; }
+        .pdf-export-mode [data-lucide="flame"] { display: none !important; } /* Ocultar llama de fondo en PDF */
+        
+        /* Ocultar avatar y optimizar distribución */
+        .pdf-export-mode header .relative:first-child { display: none !important; }
+        .pdf-export-mode header { padding: 1rem !important; gap: 1rem !important; margin-bottom: 0.5rem !important; }
+        .pdf-export-mode header .text-3xl { font-size: 1.5rem !important; }
+        .pdf-export-mode header .flex-1 { text-align: left !important; }
+        .pdf-export-mode .text-4xl { font-size: 1.75rem !important; }
+        .pdf-export-mode .p-8 { padding: 1rem !important; }
+        .pdf-export-mode section { margin-top: 1rem !important; gap: 1rem !important; }
+
+        .pdf-export-mode .lg\:col-span-7 .glass-card {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            justify-content: center !important;
+            padding: 8px 4px !important;
+            min-height: 70px !important;
+        }
+        .pdf-export-mode .lg\:col-span-7 .glass-card span:first-child { 
+            font-size: 9px !important; 
+            margin-bottom: 2px !important;
+        }
+        .pdf-export-mode .lg\:col-span-7 .glass-card .text-2xl { font-size: 1.1rem !important; }
+        .pdf-export-mode .lg\:col-span-7 .glass-card p { font-size: 8px !important; }
+        
+        .pdf-export-mode svg { 
+            width: 14px !important;
+            height: 14px !important;
+            overflow: visible !important;
+            stroke-width: 2px !important;
+            stroke: #1e293b !important;
+            display: block !important;
+            margin: 0 auto 2px !important;
+        }
+
+        .pdf-export-mode #pdf-date-header { display: block !important; }
+    </style>
+</head>
+<body class="bg-[#020617] text-slate-100 min-h-screen flex flex-col md:flex-row">
+    
+    <!-- Sidebar de Gestión (Para Entrenadores) -->
+    <aside class="w-full md:w-80 border-r border-slate-800/50 bg-[#020617] p-6 space-y-8 h-screen sticky top-0 overflow-y-auto z-50">
+        <div class="space-y-6">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="accent-gradient p-2 rounded-xl shadow-lg shadow-lime-500/20">
+                    <i data-lucide="activity" class="text-slate-950 w-6 h-6"></i>
+                </div>
+            </div>
+
+            <!-- Buscador de Alumnos -->
+            <div class="relative group">
+                <i data-lucide="search" class="absolute left-3 top-3 w-4 h-4 text-slate-500 group-focus-within:text-lime-400 transition-colors"></i>
+                <input type="text" id="student-search" placeholder="Buscar alumno..." 
+                    class="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-lime-400/50 transition-all" oninput="filterStudents()">
+            </div>
+
+            <!-- Lista de Alumnos -->
+            <div class="space-y-2">
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 px-2">Mis Alumnos</p>
+                <div id="student-list" class="space-y-1">
+                    <div class="p-4 text-slate-500 text-xs italic">Cargando alumnos...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pt-8 border-t border-slate-800">
+            <button onclick="isEditingStudent = false; openModal('modal-new-student')" class="w-full accent-gradient text-slate-950 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-lime-500/10 hover:scale-[1.02] transition-transform">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Nuevo Alumno
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 max-w-7xl mx-auto px-4 py-8 md:px-6 lg:py-10 space-y-8">
+        
+        <!-- Navegación Superior -->
+        <div class="flex justify-between items-center mb-4">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 text-slate-400 text-sm no-export">
+                    <i data-lucide="home" class="w-4 h-4"></i>
+                    <span>/</span>
+                    <span class="text-slate-200 font-medium">Planificación</span>
+                </div>
+                <input type="date" id="plan-date-selector" onchange="changePlanDate(this.value)" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-lime-400 focus:outline-none focus:border-lime-400/50 transition-all no-export">
+            </div>
+            <div class="flex gap-2">
+                <button onclick="exportPlanToPDF()" class="bg-lime-400 text-slate-950 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:scale-105 transition-all no-export">
+                    <i data-lucide="download" class="w-4 h-4"></i> Exportar PDF
+                </button>
+                <button class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors no-export">
+                <i data-lucide="settings" class="w-4 h-4 text-slate-400"></i> Ajustes de Plan
+                </button>
+            </div>
+        </div>
+
+        <!-- Cabecera de fecha solo para PDF -->
+        <div id="pdf-date-header" class="hidden mb-6 p-6 bg-white border-b-4 border-lime-500 rounded-3xl">
+            <h1 class="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-1">PLAN NUTRICIONAL</h1>
+            <p class="text-slate-500 font-bold">Fecha: <span id="pdf-date-val" class="text-lime-600"></span></p>
+        </div>
+
+        <!-- 1. ENCABEZADO DEL PERFIL (ALUMNO) -->
+        <header class="glass-card rounded-[2rem] p-6 md:p-8 flex flex-col lg:flex-row gap-8 items-center border-t border-white/10">
+            <div class="relative">
+                <div class="w-32 h-32 rounded-3xl overflow-hidden border-4 border-lime-400/20 ring-1 ring-white/10">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos" alt="Alumno" class="w-full h-full object-cover bg-slate-900">
+                </div>
+                <div class="absolute -bottom-3 -right-3 bg-lime-400 text-slate-950 p-2 rounded-xl shadow-xl">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                </div>
+            </div>
+
+            <div class="flex-1 text-center lg:text-left space-y-4">
+                <div class="flex flex-col md:flex-row items-center justify-center lg:justify-start gap-4">
+                    <h2 class="text-3xl font-extrabold text-white tracking-tight">Selecciona un Alumno</h2>
+                    <div id="student-actions" class="flex gap-2 hidden no-export">
+                        <button onclick="editCurrentStudent()" class="p-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors group" title="Editar Alumno" data-html2canvas-ignore="true">
+                            <i data-lucide="edit-3" class="w-4 h-4 text-slate-400 group-hover:text-white"></i>
+                        </button>
+                        <button onclick="deleteCurrentStudent()" class="p-2 bg-rose-500/10 hover:bg-rose-500/20 rounded-xl border border-rose-500/20 transition-colors group" title="Eliminar Alumno" data-html2canvas-ignore="true">
+                            <i data-lucide="trash-2" class="w-4 h-4 text-rose-500"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="header-coach-info" class="hidden">
+                    <p class="text-slate-400 font-medium flex items-center justify-center lg:justify-start gap-2 mt-1">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-lime-400"></i> Coach Asignado: Marcos "Titan" Ramos
+                    </p>
+                </div>
+                
+                <div class="flex flex-wrap justify-center lg:justify-start gap-3">
+                    <div class="px-4 py-2 bg-slate-800/50 rounded-2xl border border-slate-700/50">
+                        <span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold block">Objetivo Actual</span>
+                        <span class="text-lime-400 font-bold uppercase text-sm">Hipertrofia Muscular</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3 w-full lg:w-auto">
+                <div class="glass-card bg-white/5 rounded-2xl p-4 text-center min-w-[90px]">
+                    <i data-lucide="dumbbell" class="w-5 h-5 mx-auto mb-2 text-lime-400/80"></i>
+                    <span id="header-weight" class="block text-xl font-bold">--<span class="text-xs font-normal text-slate-400 ml-0.5">kg</span></span>
+                    <span class="text-[10px] uppercase text-slate-500 font-bold">Peso</span>
+                </div>
+                <div class="glass-card bg-white/5 rounded-2xl p-4 text-center min-w-[90px]">
+                    <i data-lucide="ruler" class="w-5 h-5 mx-auto mb-2 text-lime-400/80"></i>
+                    <span id="header-height" class="block text-xl font-bold">--<span class="text-xs font-normal text-slate-400 ml-0.5">cm</span></span>
+                    <span class="text-[10px] uppercase text-slate-500 font-bold">Estatura</span>
+                </div>
+                <div class="glass-card bg-white/5 rounded-2xl p-4 text-center min-w-[90px]">
+                    <i data-lucide="calendar" class="w-5 h-5 mx-auto mb-2 text-lime-400/80"></i>
+                    <span id="header-age" class="block text-xl font-bold">--<span class="text-xs font-normal text-slate-400 ml-0.5">añ.</span></span>
+                    <span class="text-[10px] uppercase text-slate-500 font-bold">Edad</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 2. METAS DIARIAS VS REAL -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Calorías -->
+            <div onclick="openModal('modal-calorie-info')" class="lg:col-span-5 glass-card rounded-[2rem] p-8 relative overflow-hidden group cursor-pointer hover:border-lime-400/30 transition-all shadow-lg hover:shadow-lime-500/5">
+                <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                    <i data-lucide="flame" class="w-24 h-24 text-lime-400"></i>
+                </div>
+                <div class="flex justify-between items-start mb-6">
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        <i data-lucide="zap" class="text-lime-400 fill-lime-400/20"></i> Balance Calórico
+                    </h3>
+                    <button class="text-slate-500 hover:text-lime-400 transition-colors p-1 bg-white/5 rounded-lg border border-white/5">
+                        <i data-lucide="info" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div class="space-y-6">
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <span id="current-calories" class="text-4xl font-black">0</span>
+                            <span id="target-calories-display" class="text-slate-400 font-medium">/ 2,800 kcal</span>
+                        </div>
+                        <span id="calorie-percentage" class="text-lime-400 font-bold text-sm bg-lime-400/10 px-3 py-1 rounded-full uppercase tracking-tighter">0%</span>
+                    </div>
+                    <div class="h-4 w-full bg-slate-900 rounded-full overflow-hidden p-1 border border-white/5">
+                        <div id="calorie-progress-bar" class="h-full accent-gradient rounded-full progress-ring shadow-[0_0_15px_rgba(190,242,100,0.3)]" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Macros Summary -->
+            <div class="lg:col-span-7 grid grid-cols-2 md:grid-cols-5 gap-4">
+                <!-- Protein -->
+                <div class="glass-card rounded-3xl p-5 flex flex-col justify-between border-b-4 border-blue-500/50">
+                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Proteína</span>
+                    <div class="mt-2">
+                        <span id="current-p" class="text-2xl font-bold">0g</span>
+                        <p id="target-p" class="text-[10px] text-blue-400 font-bold">Meta: --g</p>
+                    </div>
+                </div>
+                <!-- Carbs -->
+                <div class="glass-card rounded-3xl p-5 flex flex-col justify-between border-b-4 border-amber-500/50">
+                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Carbos</span>
+                    <div class="mt-2">
+                        <span id="current-c" class="text-2xl font-bold">0g</span>
+                        <p id="target-c" class="text-[10px] text-amber-400 font-bold">Meta: --g</p>
+                    </div>
+                </div>
+                <!-- Fats -->
+                <div class="glass-card rounded-3xl p-5 flex flex-col justify-between border-b-4 border-rose-500/50">
+                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Grasas</span>
+                    <div class="mt-2">
+                        <span id="current-g" class="text-2xl font-bold">0g</span>
+                        <p id="target-g" class="text-[10px] text-rose-400 font-bold">Meta: --g</p>
+                    </div>
+                </div>
+                <!-- Fiber -->
+                <div class="glass-card rounded-3xl p-5 flex flex-col justify-between border-b-4 border-emerald-500/50">
+                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Fibra</span>
+                    <div class="mt-2">
+                        <span id="current-f" class="text-2xl font-bold">0g</span>
+                        <p id="target-f" class="text-[10px] text-emerald-400 font-bold">Meta: --g</p>
+                    </div>
+                </div>
+                <!-- Water -->
+                <div class="glass-card rounded-3xl p-5 flex flex-col justify-between border-b-4 border-cyan-500/50 col-span-2 md:col-span-1">
+                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Agua</span>
+                    <div class="mt-2">
+                        <span id="current-w" class="text-2xl font-bold text-cyan-400">0L</span>
+                        <p id="target-w" class="text-[10px] text-cyan-400 font-bold">Meta: --L</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. PLANIFICADOR DE COMIDAS -->
+        <section class="space-y-6">
+            <div class="flex items-center justify-between px-2">
+                <div class="flex items-center gap-4">
+                    <h3 class="text-2xl font-extrabold flex items-center gap-3">
+                        <i data-lucide="calendar-days" class="text-lime-400"></i> Plan Nutricional
+                    </h3>
+                    <button onclick="openModal('modal-add-food')" class="bg-lime-400 text-slate-950 px-4 py-2 rounded-xl hover:scale-105 transition-all font-bold text-xs flex items-center gap-2 no-export" title="Añadir alimento a una comida">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Nueva Comida
+                    </button>
+                </div>
+            </div>
+
+            <div id="meal-list" class="space-y-6">
+                <!-- Meals will be injected here -->
+            </div>
+        </section>
+
+        <!-- 4. SUPLEMENTACIÓN Y OBSERVACIONES -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
+            <div class="glass-card rounded-[2rem] p-8 border-l-8 border-lime-400 relative">
+                <div class="flex justify-between items-start mb-6">
+                    <h4 class="text-xl font-bold flex items-center gap-3 italic">
+                        <i data-lucide="pill" class="text-lime-400"></i> Suplementación
+                    </h4>
+                    <button onclick="openModal('modal-supplement')" class="p-2 bg-lime-400/10 hover:bg-lime-400/20 rounded-xl transition-colors no-export">
+                        <i data-lucide="plus" class="w-4 h-4 text-lime-400"></i>
+                    </button>
+                </div>
+                <div id="supplement-list" class="space-y-3">
+                    <p class="text-slate-500 text-xs italic p-4 text-center border border-dashed border-white/5 rounded-2xl">No hay suplementos asignados</p>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-[2rem] p-8 border-l-8 border-slate-500 relative">
+                <div class="flex justify-between items-start mb-6">
+                    <h4 class="text-xl font-bold flex items-center gap-3 italic text-slate-300">
+                        <i data-lucide="sticky-note" class="text-slate-400"></i> Notas Estratégicas
+                    </h4>
+                    <button onclick="openModal('modal-note')" class="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors no-export">
+                        <i data-lucide="plus" class="w-4 h-4 text-slate-400"></i>
+                    </button>
+                </div>
+                <div id="notes-container">
+                    <p class="text-slate-500 text-xs italic p-4 text-center border border-dashed border-white/5 rounded-2xl">Sin notas para hoy</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL: AÑADIR ALIMENTO -->
+    <div id="modal-add-food" onclick="closeModal('modal-add-food')" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-lg rounded-[2rem] p-8 border border-white/10 shadow-2xl" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold flex items-center gap-2 italic">
+                    <i data-lucide="utensils" class="text-lime-400"></i> Añadir Comida
+                </h3>
+                <button onclick="closeModal('modal-add-food')" class="p-2 hover:bg-white/5 rounded-full transition-colors">
+                    <i data-lucide="x" class="text-slate-400"></i>
+                </button>
+            </div>
+            <form id="food-form" class="space-y-4" autocomplete="off">
+                <input type="hidden" id="meal-id-input">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase px-2">Fecha del Plan</label>
+                    <input type="date" id="food-date" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400/50 transition-all text-white">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Comida (Momento)</label>
+                        <select id="food-meal-name" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400/50 transition-all text-slate-300">
+                            <option value="Desayuno">Desayuno</option>
+                            <option value="Almuerzo">Almuerzo</option>
+                            <option value="Merienda">Merienda</option>
+                            <option value="Cena">Cena</option>
+                            <option value="Snack">Snack</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2 relative">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Alimento</label>
+                        <input type="text" id="food-name" required placeholder="Ej: Pechuga de Pollo" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400/50 transition-all"
+                            oninput="searchFoodLibrary(this.value)">
+                        <div id="search-results" class="absolute z-[110] w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl hidden max-h-80 overflow-y-auto shadow-2xl"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Tipo Nutriente</label>
+                        <input type="text" id="food-type" readonly placeholder="Automático" 
+                            class="w-full bg-slate-900/50 border border-slate-800 rounded-2xl py-3 px-4 text-lime-400 font-bold focus:outline-none cursor-not-allowed">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Porción</label>
+                        <input type="text" id="food-qty" required placeholder="100g" class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400/50 transition-all" oninput="calculateMacrosFromQty(this.value)">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Calorías</label>
+                        <input type="number" step="0.1" id="food-cal" required placeholder="0" class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400/50 transition-all">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Prot (g)</label>
+                        <input type="number" step="0.1" id="food-p" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-blue-400 transition-all">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Carb (g)</label>
+                        <input type="number" step="0.1" id="food-c" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-amber-400 transition-all">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Grasa (g)</label>
+                        <input type="number" step="0.1" id="food-g" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-rose-400 transition-all">
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button type="button" id="btn-delete-food" onclick="deleteFoodItem()" class="hidden flex-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 font-bold py-4 rounded-2xl border border-rose-500/20 transition-all">
+                        Eliminar
+                    </button>
+                    <button type="submit" class="flex-[2] accent-gradient text-slate-950 font-bold py-4 rounded-2xl shadow-lg hover:scale-[1.01] transition-transform">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: NUEVO ALUMNO -->
+    <div id="modal-new-student" onclick="closeModal('modal-new-student')" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-lg rounded-[2rem] p-8 border border-white/10 shadow-2xl" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold flex items-center gap-2 italic text-lime-400">
+                    <i data-lucide="user-plus"></i> Registrar Nuevo Alumno
+                </h3>
+                <button onclick="closeModal('modal-new-student')" class="p-2 hover:bg-white/5 rounded-full transition-colors">
+                    <i data-lucide="x" class="text-slate-400"></i>
+                </button>
+            </div>
+            <form id="student-form" class="space-y-4" autocomplete="off" oninput="updateCaloriePreview()">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Nombre Completo</label>
+                        <input type="text" id="student-name" required placeholder="Ej: Juan Pérez" class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Sexo</label>
+                        <select id="student-gender" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-slate-300">
+                            <option value="Hombre">Hombre</option>
+                            <option value="Mujer">Mujer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Nivel de Actividad</label>
+                        <select id="student-activity" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-slate-300">
+                            <option value="Sedentario">Sedentario (Poco o nada)</option>
+                            <option value="Ligero">Actividad Ligera (1-3 días/sem)</option>
+                            <option value="Moderado">Actividad Moderada (3-5 días/sem)</option>
+                            <option value="Intenso">Actividad Intensa (6-7 días/sem)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Objetivo</label>
+                        <select id="student-objective" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-slate-300">
+                            <option value="Aumentar masa muscular">Aumentar masa muscular</option>
+                            <option value="Bajar grasa corporal">Bajar grasa corporal</option>
+                            <option value="Mantener el peso actual">Mantener el peso actual</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Peso (kg)</label>
+                        <input type="number" step="0.1" id="student-weight" required placeholder="70" class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Estatura (cm)</label>
+                        <input type="number" id="student-height" required placeholder="170" class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Edad</label>
+                        <input type="number" id="student-age" required placeholder="25" class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all">
+                    </div>
+                </div>
+                <!-- Vista previa de calorías calculadas -->
+                <div id="calorie-preview" class="p-4 bg-lime-400/10 border border-lime-400/20 rounded-2xl text-center hidden">
+                    <p class="text-[10px] text-lime-400 font-bold uppercase mb-1 tracking-widest italic">Plan Calórico Sugerido</p>
+                    <span class="text-2xl font-black text-white" id="preview-val">0</span>
+                    <span class="text-xs text-slate-500 ml-1">kcal/día</span>
+                </div>
+                <button type="submit" class="w-full accent-gradient text-slate-950 font-bold py-4 rounded-2xl shadow-lg mt-4 transition-transform hover:scale-[1.01]">
+                    Guardar Alumno
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: SUPLEMENTACIÓN -->
+    <div id="modal-supplement" onclick="closeModal('modal-supplement')" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-[2rem] p-8 border border-white/10 shadow-2xl" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold flex items-center gap-2 italic text-lime-400">
+                    <i data-lucide="pill"></i> Suplemento
+                </h3>
+                <button onclick="closeModal('modal-supplement')" class="p-2 hover:bg-white/5 rounded-full transition-colors">
+                    <i data-lucide="x" class="text-slate-400"></i>
+                </button>
+            </div>
+            <form id="supplement-form" class="space-y-4">
+                <input type="hidden" id="supp-id-input">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase px-2">Nombre del Suplemento</label>
+                    <input type="text" id="supp-name" required placeholder="Ej: Creatina Creapure" class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-white">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase px-2">Dosis y Momento</label>
+                    <input type="text" id="supp-dosage" required placeholder="Ej: 5g en ayunas" class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-white">
+                </div>
+                <button type="submit" class="w-full accent-gradient text-slate-950 font-bold py-4 rounded-2xl shadow-lg mt-4 transition-transform hover:scale-[1.01]">
+                    Guardar Suplemento
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: NOTAS -->
+    <div id="modal-note" onclick="closeModal('modal-note')" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-[2rem] p-8 border border-white/10 shadow-2xl" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold flex items-center gap-2 italic text-slate-300">
+                    <i data-lucide="sticky-note"></i> Nota Estratégica
+                </h3>
+                <button onclick="closeModal('modal-note')" class="p-2 hover:bg-white/5 rounded-full transition-colors">
+                    <i data-lucide="x" class="text-slate-400"></i>
+                </button>
+            </div>
+            <form id="note-form" class="space-y-4">
+                <input type="hidden" id="note-id-input">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase px-2">Contenido de la Nota</label>
+                    <textarea id="note-content" required rows="4" placeholder="Ej: Mantén el consumo de sal mínimo..." class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-white resize-none"></textarea>
+                </div>
+                <button type="submit" class="w-full accent-gradient text-slate-950 font-bold py-4 rounded-2xl shadow-lg mt-4 transition-transform hover:scale-[1.01]">
+                    Guardar Nota
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: INFO CALORÍAS -->
+    <div id="modal-calorie-info" onclick="closeModal('modal-calorie-info')" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-lg rounded-[2rem] p-8 border border-white/10 shadow-2xl" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold flex items-center gap-2 italic text-lime-400">
+                    <i data-lucide="calculator"></i> Configuración Energética
+                </h3>
+                <button onclick="closeModal('modal-calorie-info')" class="p-2 hover:bg-white/5 rounded-full transition-colors">
+                    <i data-lucide="x" class="text-slate-400"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-6">
+                <div class="bg-white/5 p-5 rounded-3xl border border-white/5 space-y-4">
+                    <p class="text-sm text-slate-400 italic">"Cálculo basado en la revisión de Mifflin-St Jeor (1990) sobre la fórmula de Harris-Benedict."</p>
+                    <div id="calorie-breakdown" class="space-y-2 text-xs">
+                        <!-- Injected breakdown -->
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-500 uppercase px-2 tracking-widest">Ajuste Manual (kcal/día)</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="manual-calories" class="flex-1 bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-white font-bold" placeholder="Ej: 2500">
+                            <button onclick="updateManualCalories()" class="px-6 accent-gradient text-slate-950 font-bold rounded-2xl hover:scale-[1.02] transition-transform text-sm">Actualizar</button>
+                        </div>
+                    </div>
+                    <button onclick="closeModal('modal-calorie-info'); isEditingStudent = true; openModal('modal-new-student')" class="w-full py-4 border border-white/10 rounded-2xl text-xs font-bold text-slate-400 hover:bg-white/5 transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Recalcular Biométricos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de Supabase
+        const SUPABASE_URL = 'https://maivzxzljgfqiqkvbspd.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1haXZ6eHpsamdmcWlxa3Zic3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzODc3MTQsImV4cCI6MjA5NDk2MzcxNH0.OMFW-aYQFelf5yTo-zgKKZyzb6J2EwixHZuY9Jxhx-0';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let selectedStudentId = null;
+        let currentStudent = null;
+        let allStudents = [];
+        let selectedStudentCalories = 2800;
+        let currentPlan = null;
+        let isEditingStudent = false;
+        let currentPlanDate = new Date().toISOString().split('T')[0];
+        let editingFoodId = null; // Para saber si estamos editando o creando
+        let baseFoodData = null; // Datos de referencia para el cálculo proporcional
+        let editingSupplementId = null;
+        let editingNoteId = null;
+        
+        let activeMeals = []; // Vaciado para usar datos reales
+
+        // Control de Modales
+        function openModal(id, mealName = null) {
+            const modal = document.getElementById(id);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.classList.add('modal-active');
+
+            if (id === 'modal-add-food') {
+                document.getElementById('meal-id-input').value = editingFoodId || '';
+                const deleteBtn = document.getElementById('btn-delete-food');
+                if (!editingFoodId) {
+                    const lastMealType = document.getElementById('food-meal-name').value;
+                    document.getElementById('food-form').reset();
+                    baseFoodData = null; // Resetear datos base al crear nuevo
+                    document.getElementById('food-date').value = currentPlanDate;
+                    document.getElementById('food-meal-name').value = mealName || lastMealType || 'Desayuno';
+                    deleteBtn.classList.add('hidden');
+                } else {
+                    deleteBtn.classList.remove('hidden');
+                }
+            }
+
+            if (id === 'modal-supplement' && !editingSupplementId) {
+                document.getElementById('supplement-form').reset();
+                document.getElementById('supp-id-input').value = '';
+            }
+
+            if (id === 'modal-note' && !editingNoteId) {
+                document.getElementById('note-form').reset();
+                document.getElementById('note-id-input').value = '';
+            }
+
+            if (id === 'modal-new-student') {
+                const title = modal.querySelector('h3');
+                const submitBtn = modal.querySelector('button[type="submit"]');
+                
+                if (isEditingStudent && selectedStudentId) {
+                    title.innerHTML = '<i data-lucide="user-plus"></i> Editar Alumno';
+                    submitBtn.innerText = 'Actualizar Datos';
+                    const student = allStudents.find(s => s.id === selectedStudentId);
+                    document.getElementById('student-name').value = student.full_name;
+                    document.getElementById('student-objective').value = student.objective;
+                    document.getElementById('student-gender').value = student.gender || 'Hombre';
+                    document.getElementById('student-activity').value = student.activity_level || 'Sedentario';
+                    document.getElementById('student-weight').value = student.current_weight;
+                    document.getElementById('student-height').value = student.height;
+                    document.getElementById('student-age').value = student.age;
+                } else {
+                    title.innerHTML = '<i data-lucide="user-plus"></i> Registrar Nuevo Alumno';
+                    submitBtn.innerText = 'Guardar Alumno';
+                }
+                updateCaloriePreview();
+                lucide.createIcons();
+            }
+
+            if (id === 'modal-calorie-info' && currentStudent) {
+                document.getElementById('manual-calories').value = selectedStudentCalories;
+                
+                const weight = currentStudent.current_weight;
+                const height = currentStudent.height;
+                const age = currentStudent.age;
+                const gender = currentStudent.gender || 'Hombre';
+                const activity = currentStudent.activity_level || 'Sedentario';
+                const objective = currentStudent.objective || 'Mantener el peso actual';
+
+                let tmb = (10 * weight) + (6.25 * height) - (5 * age);
+                tmb = (gender === 'Hombre') ? tmb + 5 : tmb - 161;
+                
+                const activityFactors = { 'Sedentario': 1.2, 'Ligero': 1.375, 'Moderado': 1.55, 'Intenso': 1.725 };
+                const factor = activityFactors[activity] || 1.2;
+                let ged = tmb * factor;
+
+                let breakdownHTML = `
+                    <div class="flex justify-between border-b border-white/5 pb-2"><span class="text-slate-500">Tasa Metabólica Basal (TMB):</span><span class="text-white font-bold">${Math.round(tmb)} kcal</span></div>
+                    <div class="flex justify-between border-b border-white/5 pb-2"><span class="text-slate-500">Factor Actividad (${activity}):</span><span class="text-white font-bold">x${factor}</span></div>
+                    <div class="flex justify-between border-b border-white/5 pb-2"><span class="text-slate-500">Mantenimiento (GED):</span><span class="text-white font-bold">${Math.round(ged)} kcal</span></div>
+                `;
+
+                if (objective === 'Bajar grasa corporal') {
+                    breakdownHTML += `<div class="flex justify-between text-rose-400"><span class="font-bold">Ajuste Objetivo (Déficit 15%):</span><span class="font-black">-${Math.round(ged * 0.15)} kcal</span></div>`;
+                } else if (objective === 'Aumentar masa muscular') {
+                    breakdownHTML += `<div class="flex justify-between text-lime-400"><span class="font-bold">Ajuste Objetivo (Superávit):</span><span class="font-black">+300 kcal</span></div>`;
+                } else {
+                    breakdownHTML += `<div class="flex justify-between text-blue-400"><span class="font-bold">Ajuste Objetivo:</span><span class="font-black">Mantenimiento</span></div>`;
+                }
+
+                document.getElementById('calorie-breakdown').innerHTML = breakdownHTML;
+                lucide.createIcons();
+            }
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.classList.remove('modal-active');
+            document.getElementById('meal-id-input').value = '';
+            editingFoodId = null; // Resetear estado de edición
+            if (id === 'modal-supplement') {
+                document.getElementById('supp-id-input').value = '';
+                editingSupplementId = null;
+            }
+            if (id === 'modal-note') {
+                document.getElementById('note-id-input').value = '';
+                editingNoteId = null;
+            }
+        }
+
+        // Cargar Lista de Alumnos
+        async function loadStudents() {
+            const { data, error } = await _supabase.from('profiles').select('*');
+            if (error) return console.error(error);
+            
+            allStudents = data;
+            renderStudentList(data);
+            lucide.createIcons();
+        }
+
+        function renderStudentList(students) {
+            const container = document.getElementById('student-list');
+            container.innerHTML = students.map(student => `
+                <button onclick="selectStudent('${student.id}')" class="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 text-left transition-all ${selectedStudentId === student.id ? 'bg-lime-400/10 border border-lime-400/20 text-lime-400' : 'text-slate-300'}">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${student.full_name}" class="w-8 h-8 rounded-lg bg-slate-800">
+                    <div>
+                        <p class="text-sm font-bold">${student.full_name}</p>
+                        <p class="text-[10px] text-slate-500">${student.objective} • ${student.current_weight}kg</p>
+                    </div>
+                </button>
+            `).join('');
+        }
+
+        function filterStudents() {
+            const term = document.getElementById('student-search').value.toLowerCase();
+            const filtered = allStudents.filter(s => s.full_name.toLowerCase().includes(term));
+            renderStudentList(filtered);
+        }
+
+        async function changePlanDate(date) {
+            currentPlanDate = date;
+            if (selectedStudentId) {
+                await fetchStudentData(selectedStudentId);
+            }
+        }
+
+        async function selectStudent(id) {
+            selectedStudentId = id;
+            currentStudent = allStudents.find(s => s.id === id);
+            selectedStudentCalories = currentStudent.target_calories || 2800;
+            
+            // Actualizar Nombre y mostrar acciones
+            document.querySelector('header h2').innerText = currentStudent.full_name;
+            document.getElementById('student-actions').classList.remove('hidden');
+            document.getElementById('header-coach-info').classList.remove('hidden');
+            
+            document.getElementById('header-weight').innerHTML = `${currentStudent.current_weight}<span class="text-xs font-normal text-slate-400 ml-0.5">kg</span>`;
+            document.getElementById('header-height').innerHTML = `${currentStudent.height}<span class="text-xs font-normal text-slate-400 ml-0.5">cm</span>`;
+            document.getElementById('header-age').innerHTML = `${currentStudent.age}<span class="text-xs font-normal text-slate-400 ml-0.5">añ.</span>`;
+
+            const objectiveEl = document.querySelector('header span.text-lime-400.font-bold.uppercase.text-sm');
+            if(objectiveEl) objectiveEl.innerText = currentStudent.objective || 'Sin objetivo';
+
+            renderStudentList(allStudents); // Refrescar para visualización de seleccionado
+            await fetchStudentData(id);
+        }
+
+        async function updateManualCalories() {
+            const newKcal = parseInt(document.getElementById('manual-calories').value);
+            if (!selectedStudentId || isNaN(newKcal)) return;
+
+            const { error } = await _supabase.from('profiles').update({ target_calories: newKcal }).eq('id', selectedStudentId);
+            if (error) {
+                alert("Error: " + error.message);
+            } else {
+                selectedStudentCalories = newKcal;
+                const idx = allStudents.findIndex(s => s.id === selectedStudentId);
+                if(idx !== -1) allStudents[idx].target_calories = newKcal;
+                closeModal('modal-calorie-info');
+                await fetchStudentData(selectedStudentId);
+            }
+        }
+
+        function editCurrentStudent() {
+            if (!selectedStudentId) return;
+            isEditingStudent = true;
+            openModal('modal-new-student');
+        }
+
+        async function deleteCurrentStudent() {
+            if (!selectedStudentId) return;
+            const student = allStudents.find(s => s.id === selectedStudentId);
+            if (confirm(`¿Estás seguro de que deseas eliminar a ${student.full_name}? Esta acción borrará todos sus datos y comidas.`)) {
+                const { error } = await _supabase.from('profiles').delete().eq('id', selectedStudentId);
+                if (error) {
+                    alert("Error al eliminar: " + error.message);
+                } else {
+                    alert("Alumno eliminado correctamente.");
+                    location.reload(); // Recarga simple para limpiar el estado
+                }
+            }
+        }
+
+        // CALCULADORA HARRIS-BENEDICT (Mifflin-St Jeor)
+        function calculateHarrisBenedict() {
+            const weight = parseFloat(document.getElementById('student-weight').value);
+            const height = parseFloat(document.getElementById('student-height').value);
+            const age = parseInt(document.getElementById('student-age').value);
+            const gender = document.getElementById('student-gender').value;
+            const activity = document.getElementById('student-activity').value;
+            const objective = document.getElementById('student-objective').value;
+
+            if (!weight || !height || !age) return 0;
+
+            // TMB (Mifflin-St Jeor)
+            let tmb = (10 * weight) + (6.25 * height) - (5 * age);
+            tmb = (gender === 'Hombre') ? tmb + 5 : tmb - 161;
+
+            // Factores de Actividad
+            const activityFactors = {
+                'Sedentario': 1.2,
+                'Ligero': 1.375,
+                'Moderado': 1.55,
+                'Intenso': 1.725
+            };
+
+            let ged = tmb * (activityFactors[activity] || 1.2);
+
+            // Ajuste por Objetivo
+            if (objective === 'Bajar grasa corporal') ged *= 0.85; // Déficit 15%
+            else if (objective === 'Aumentar masa muscular') ged += 300; // Superávit moderado
+            
+            return Math.round(ged);
+        }
+
+        function updateCaloriePreview() {
+            const kcal = calculateHarrisBenedict();
+            const preview = document.getElementById('calorie-preview');
+            const val = document.getElementById('preview-val');
+            
+            if (kcal > 0) {
+                preview.classList.remove('hidden');
+                val.innerText = kcal.toLocaleString();
+            } else {
+                preview.classList.add('hidden');
+            }
+        }
+
+        // Buscar en la biblioteca de alimentos con Debounce y control de peticiones
+        let searchTimeout;
+        let lastSearchId = 0;
+
+        function searchFoodLibrary(query) {
+            const resultsBox = document.getElementById('search-results');
+            const searchTerm = query.trim();
+
+            if (searchTerm.length < 1) {
+                resultsBox.classList.add('hidden');
+                return;
+            }
+
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                const currentSearchId = ++lastSearchId;
+
+                // Cambiamos el origen a la tabla 'comidas' y buscamos coincidencias parciales en 'Alimento'
+                const { data, error } = await _supabase
+                    .from('comidas')
+                    .select('*')
+                    .ilike('Alimento', `%${searchTerm}%`)
+                    .limit(10);
+                
+                if (error) {
+                    console.error("Error en la búsqueda de Supabase:", error);
+                    resultsBox.innerHTML = `<div class="p-4 text-rose-400 text-xs italic text-center">Error de conexión: Verifica el nombre de la tabla o columnas</div>`;
+                    resultsBox.classList.remove('hidden');
+                    return;
+                }
+
+                if (currentSearchId !== lastSearchId) return;
+
+                if (data && data.length > 0) {
+                    resultsBox.innerHTML = data.map(food => {
+                        // Detectar el nombre y detalles adicionales para distinguir variaciones
+                        const name = food.Alimento || food.name || food.food_name || food.nombre || food.producto || 'Alimento sin nombre';
+                        const detail = food.Variedad || food.Marca || '';
+                        const serving = food['Porción'] || '100g';
+                        const p = food['Proteínas (g)'] || 0;
+                        const c = food['Carbohidratos (g)'] || 0;
+                        const g = food['Grasas (g)'] || 0;
+                        const cal = food['Calorías'] || 0;
+
+                        const fullDisplayName = detail ? `${name} <span class="text-lime-500/50 text-[10px] italic">(${detail})</span>` : name;
+
+                        return `
+                            <div onclick='selectFoodFromLibrary(${JSON.stringify(food).replace(/'/g, "&apos;")})' 
+                                 class="p-4 hover:bg-white/10 cursor-pointer border-b border-white/5 last:border-0 text-sm group transition-all">
+                                <div class="flex justify-between items-start">
+                                    <span class="font-bold text-white group-hover:text-lime-400 transition-colors pr-2">${fullDisplayName}</span>
+                                    <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-lg font-mono">${serving}</span>
+                                </div>
+                                <div class="flex gap-3 text-[10px] mt-1 italic text-slate-500">
+                                    <span class="text-blue-400/80">P: ${p}g</span> | 
+                                    <span class="text-amber-400/80">C: ${c}g</span> | 
+                                    <span class="text-rose-400/80">G: ${g}g</span> | 
+                                    <span class="text-slate-400 font-bold">${cal} kcal</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    resultsBox.classList.remove('hidden');
+                } else {
+                    resultsBox.innerHTML = `<div class="p-4 text-slate-500 text-xs italic text-center">No se encontraron resultados para "${searchTerm}"</div>`;
+                    resultsBox.classList.remove('hidden');
+                }
+            }, 300);
+        }
+
+        function selectFoodFromLibrary(food) {
+            const name = food.Alimento || food.name || food.food_name || food.nombre || food.producto || '';
+            const detail = food.Variedad || food.Marca || food.brand || food.descripcion || '';
+            const serving = food['Porción'] || food.default_serving || food.serving_size || '';
+            const p = food['Proteínas (g)'] || food.protein || food.proteins || 0;
+            const c = food['Carbohidratos (g)'] || food.carbs || food.carbohydrates || 0;
+            const g = food['Grasas (g)'] || food.fat || food.fats || 0;
+            const cal = food['Calorías'] || food.calories || food.kcal || 0;
+            const type = food.Tipo || food.category || 'Proteína';
+
+            // Guardamos los valores base para futuros cálculos si se cambia la cantidad
+            baseFoodData = {
+                portion: parseFloat(serving) || 100,
+                p: p,
+                c: c,
+                g: g,
+                cal: cal
+            };
+
+            document.getElementById('food-name').value = detail ? `${name} (${detail})` : name;
+            document.getElementById('food-cal').value = cal;
+            document.getElementById('food-p').value = p;
+            document.getElementById('food-c').value = c;
+            document.getElementById('food-g').value = g;
+            document.getElementById('food-qty').value = serving;
+            document.getElementById('food-type').value = type;
+            document.getElementById('search-results').classList.add('hidden');
+        }
+
+        // Editar alimento existente
+        function editFoodItem(item) {
+            editingFoodId = item.id;
+            document.getElementById('meal-id-input').value = item.id;
+            openModal('modal-add-food');
+            document.getElementById('food-meal-name').value = item.nombre_comida;
+
+            // Al editar, establecemos la porción y macros actuales como base
+            baseFoodData = {
+                portion: parseFloat(item.quantity_label) || 100,
+                p: item.protein,
+                c: item.carbs,
+                g: item.fat,
+                cal: item.Calorías
+            };
+
+            document.getElementById('food-date').value = item.fecha || currentPlanDate;
+            document.getElementById('food-name').value = item.food_name;
+            document.getElementById('food-type').value = item.nutriente_tipo;
+            document.getElementById('food-qty').value = item.quantity_label;
+            document.getElementById('food-cal').value = item.Calorías;
+            document.getElementById('food-p').value = item.protein;
+            document.getElementById('food-c').value = item.carbs;
+            document.getElementById('food-g').value = item.fat;
+        }
+
+        // Nueva función para calcular macros proporcionalmente a la cantidad introducida
+        function calculateMacrosFromQty(val) {
+            if (!baseFoodData || !baseFoodData.portion) return;
+            
+            // Extraemos solo el número (ej: "200g" -> 200)
+            const currentQty = parseFloat(val);
+            if (isNaN(currentQty) || currentQty < 0) return;
+
+            const ratio = currentQty / baseFoodData.portion;
+            
+            document.getElementById('food-p').value = (baseFoodData.p * ratio).toFixed(1);
+            document.getElementById('food-c').value = (baseFoodData.c * ratio).toFixed(1);
+            document.getElementById('food-g').value = (baseFoodData.g * ratio).toFixed(1);
+            document.getElementById('food-cal').value = Math.round(baseFoodData.cal * ratio);
+        }
+
+        // Eliminar alimento
+        async function deleteFoodItem() {
+            if (!editingFoodId) return;
+            if (confirm('¿Deseas eliminar este alimento de la comida?')) {
+                const { error } = await _supabase.from('comidas').delete().eq('id', editingFoodId);
+                if (error) {
+                    alert("Error al eliminar: " + error.message);
+                } else {
+                    closeModal('modal-add-food');
+                    await fetchStudentData(selectedStudentId);
+                }
+            }
+        }
+
+        async function deleteFoodItemById(e, id) {
+            e.stopPropagation();
+            if (confirm('¿Deseas eliminar este alimento?')) {
+                const { error } = await _supabase.from('comidas').delete().eq('id', id);
+                if (error) {
+                    alert("Error al eliminar: " + error.message);
+                } else {
+                    await fetchStudentData(selectedStudentId);
+                }
+            }
+        }
+
+        // Actualizar horario de una comida
+        async function updateMealTime(mealName, newTime) {
+            if (!newTime || !selectedStudentId) return;
+            
+            const { error } = await _supabase
+                .from('comidas')
+                .update({ hora_sugerida: newTime })
+                .eq('alumno_id', selectedStudentId)
+                .eq('nombre_comida', mealName)
+                .eq('fecha', currentPlanDate);
+
+            if (error) console.error("Error al actualizar hora:", error);
+            else await fetchStudentData(selectedStudentId);
+        }
+
+        // Lógica de conexión a Base de Datos
+        async function fetchStudentData(studentId) {
+            if (!studentId) return;
+
+            // Consultas simultáneas para mejorar velocidad
+            const [mealsRes, suppsRes, notesRes] = await Promise.all([
+                _supabase.from('comidas').select('*').eq('alumno_id', studentId).eq('fecha', currentPlanDate),
+                _supabase.from('suplementos').select('*').eq('alumno_id', studentId).eq('fecha', currentPlanDate),
+                _supabase.from('notas').select('*').eq('alumno_id', studentId).eq('fecha', currentPlanDate)
+            ]);
+
+            const foodEntries = mealsRes.data || [];
+            
+            if (foodEntries.length === 0) {
+                renderDashboard({ meals: [], target_calories: selectedStudentCalories });
+            } else {
+                processMeals(foodEntries);
+            }
+
+            renderSupplements(suppsRes.data || []);
+            renderNotes(notesRes.data || []);
+        }
+
+        function processMeals(foodEntries) {
+            // Agrupamos los alimentos por 'nombre_comida' (Desayuno, Almuerzo...)
+            const grouped = foodEntries.reduce((acc, item) => {
+                const mealName = item.nombre_comida || 'Otros';
+                if (!acc[mealName]) acc[mealName] = [];
+                acc[mealName].push(item);
+                return acc;
+            }, {});
+
+            // Mapeamos al formato que espera el Dashboard
+            const formattedPlan = {
+                target_calories: selectedStudentCalories,
+                meals: Object.keys(grouped).map(name => ({
+                    name: name,
+                    scheduled_time: grouped[name][0].hora_sugerida || 'Sin horario',
+                    meal_items: grouped[name].map(i => ({
+                        id: i.id,
+                        fecha: i.fecha,
+                        nombre_comida: i.nombre_comida,
+                        food_name: i.Alimento,
+                        quantity_label: i['Porción'],
+                        protein: i['Proteínas (g)'] || 0,
+                        carbs: i['Carbohidratos (g)'] || 0,
+                        fat: i['Grasas (g)'] || 0,
+                        nutriente_tipo: i.Tipo,
+                        hora_sugerida: i.hora_sugerida || '00:00:00',
+                        fibra: i.fibra || 0,
+                        agua: i.agua || 0,
+                        Calorías: i.Calorías || 0
+                    }))
+                }))
+            };
+
+            renderDashboard(formattedPlan);
+        }
+
+        function renderDashboard(plan) {
+            const target = selectedStudentCalories || plan.target_calories || 0;
+            
+            let consumed = 0;
+            let pTotGlobal = 0, cTotGlobal = 0, gTotGlobal = 0, fTotGlobal = 0, wTotGlobal = 0;
+
+            if (plan.meals) {
+                plan.meals.forEach(m => {
+                    m.meal_items.forEach(i => {
+                        consumed += (i.Calorías || 0);
+                        pTotGlobal += (i.protein || 0);
+                        cTotGlobal += (i.carbs || 0);
+                        gTotGlobal += (i.fat || 0);
+                        fTotGlobal += (i.fibra || 0);
+                        wTotGlobal += (i.agua || 0);
+                    });
+                });
+            }
+
+            // Actualizar tarjetas superiores
+            document.getElementById('current-p').innerText = `${Math.round(pTotGlobal)}g`;
+            document.getElementById('current-c').innerText = `${Math.round(cTotGlobal)}g`;
+            document.getElementById('current-g').innerText = `${Math.round(gTotGlobal)}g`;
+            document.getElementById('current-f').innerText = `${Math.round(fTotGlobal)}g`;
+            document.getElementById('current-w').innerText = `${wTotGlobal.toFixed(1)}L`;
+
+            // Metas sugeridas (puedes personalizarlas después en el perfil del alumno)
+            document.getElementById('target-p').innerText = `Meta: ${Math.round(target * 0.3 / 4)}g`;
+            document.getElementById('target-c').innerText = `Meta: ${Math.round(target * 0.4 / 4)}g`;
+            document.getElementById('target-g').innerText = `Meta: ${Math.round(target * 0.3 / 9)}g`;
+            
+            document.getElementById('current-calories').innerText = consumed.toLocaleString();
+            document.getElementById('target-calories-display').innerText = `/ ${target.toLocaleString()} kcal`;
+            
+            const percentage = target > 0 ? Math.min(Math.round((consumed / target) * 100), 100) : 0;
+            document.getElementById('calorie-percentage').innerText = `${percentage}% COMPLETADO`;
+            document.getElementById('calorie-progress-bar').style.width = `${percentage}%`;
+            
+            // Renderizar Comidas
+            const container = document.getElementById('meal-list');
+            if (!plan.meals || plan.meals.length === 0) {
+                container.innerHTML = '<div class="glass-card p-12 text-center text-slate-500 rounded-[2rem] border-dashed border-2 border-white/5 italic">No hay comidas programadas para esta fecha. Pulsa "Nueva Comida" para empezar.</div>';
+                return;
+            }
+
+            container.innerHTML = plan.meals.sort((a,b) => a.sorting_order - b.sorting_order).map((meal, idx) => {
+                const pTot = meal.meal_items.reduce((s, i) => s + (i.protein || 0), 0); 
+                const cTot = meal.meal_items.reduce((s, i) => s + (i.carbs || 0), 0);
+                const gTot = meal.meal_items.reduce((s, i) => s + (i.fat || 0), 0);
+                const calTot = meal.meal_items.reduce((s, i) => s + (i.Calorías || 0), 0);
+
+                return `
+                <div class="glass-card rounded-[2rem] overflow-hidden group border border-white/5 transition-all hover:border-lime-400/30">
+                    <div class="p-6 md:p-8 flex flex-wrap justify-between items-center gap-6 bg-white/5">
+                        <div class="flex items-center gap-5">
+                            <div class="w-14 h-14 accent-gradient rounded-2xl flex items-center justify-center text-slate-950 font-black text-2xl">
+                                0${idx + 1}
+                            </div>
+                            <div>
+                                <h4 class="text-xl font-extrabold text-white">${meal.name}</h4>
+                                <div class="flex items-center gap-2 mt-1 group/time">
+                                    <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-500 group-hover/time:text-lime-400 transition-colors"></i>
+                                    <input type="time" 
+                                           value="${meal.scheduled_time ? meal.scheduled_time.substring(0,5) : '08:00'}" 
+                                           onchange="updateMealTime('${meal.name}', this.value)"
+                                           onclick="this.showPicker()"
+                                           class="bg-transparent text-slate-500 hover:text-lime-400 cursor-pointer font-bold text-[11px] uppercase focus:outline-none transition-colors border-none p-0 w-24 leading-none">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2 bg-[#020617] p-2 rounded-2xl border border-white/5">
+                                <div class="text-center px-4 border-r border-white/10"><p class="text-[10px] text-slate-500 font-bold uppercase">Kcal</p><p class="font-bold text-white">${calTot.toFixed(0)}</p></div>
+                                <div class="text-center px-4 border-r border-white/10"><p class="text-[10px] text-slate-500 font-bold uppercase">P</p><p class="font-bold text-blue-400">${pTot.toFixed(0)}g</p></div>
+                                <div class="text-center px-4 border-r border-white/10"><p class="text-[10px] text-slate-500 font-bold uppercase">C</p><p class="font-bold text-amber-500">${cTot.toFixed(0)}g</p></div>
+                                <div class="text-center px-4"><p class="text-[10px] text-slate-500 font-bold uppercase">G</p><p class="font-bold text-rose-500">${gTot.toFixed(0)}g</p></div>
+                            </div>
+                            <button onclick="openModal('modal-add-food', '${meal.name}')" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-colors text-lime-400 no-export">
+                                <i data-lucide="plus-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="text-[10px] text-slate-500 uppercase tracking-widest font-black border-b border-white/5 bg-white/[0.02]">
+                                <tr>
+                                    <th class="px-8 py-4">Alimento</th>
+                                    <th class="px-8 py-4">Cant.</th>
+                                    <th class="px-8 py-4">Tipo</th>
+                                    <th class="px-8 py-4">Macros (P/C/G)</th>
+                                    <th class="px-8 py-4">Energía</th>
+                                    <th class="px-8 py-4 text-right pr-12 no-export">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-white/5">
+                                ${meal.meal_items.map(item => `
+                                    <tr onclick='editFoodItem(${JSON.stringify(item).replace(/'/g, "&apos;")})' class="hover:bg-white/[0.03] cursor-pointer group/row transition-colors">
+                                        <td class="px-8 py-5 font-bold text-slate-200">${item.food_name}</td>
+                                        <td class="px-8 py-5"><span class="bg-slate-800 text-slate-300 px-3 py-1 rounded-lg text-[10px] uppercase font-bold">${item.quantity_label}</span></td>
+                                        <td class="px-8 py-5 text-[10px] text-slate-500 uppercase font-black tracking-widest">${item.nutriente_tipo || ''}</td>
+                                        <td class="px-8 py-5 text-xs">
+                                            <span class="text-blue-400">${item.protein}g</span> / <span class="text-amber-500">${item.carbs}g</span> / <span class="text-rose-500">${item.fat}g</span>
+                                        </td>
+                                        <td class="px-8 py-5 text-xs text-lime-400 font-bold">${Math.round(item.Calorías)} kcal</td>
+                                        <td class="px-8 py-5 text-right pr-10 no-export">
+                                            <button onclick="deleteFoodItemById(event, '${item.id}')" class="p-2 hover:bg-rose-500/20 text-slate-500 hover:text-rose-500 rounded-lg transition-colors" title="Eliminar Alimento">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </td>                                        
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function renderSupplements(supplements) {
+            const container = document.getElementById('supplement-list');
+            if (!supplements || supplements.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-xs italic p-4 text-center border border-dashed border-white/5 rounded-2xl">No hay suplementos asignados</p>';
+                return;
+            }
+            container.innerHTML = supplements.map(s => `
+                <div class="bg-white/5 p-4 rounded-2xl flex justify-between items-center border border-white/5 group">
+                    <div>
+                        <span class="font-semibold text-sm block">${s.nombre}</span>
+                        <span class="text-xs bg-lime-400/10 text-lime-400 px-3 py-1 rounded-full font-bold mt-1 inline-block">${s.dosis}</span>
+                    </div>
+                    <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity no-export">
+                        <button onclick='editSupplement(${JSON.stringify(s).replace(/'/g, "&apos;")})' class="p-1 hover:text-lime-400 transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        <button onclick="deleteSupplement('${s.id}')" class="p-1 hover:text-rose-500 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function editSupplement(s) {
+            editingSupplementId = s.id;
+            document.getElementById('supp-id-input').value = s.id;
+            document.getElementById('supp-name').value = s.nombre;
+            document.getElementById('supp-dosage').value = s.dosis;
+            openModal('modal-supplement');
+        }
+
+        async function deleteSupplement(id) {
+            if (confirm('¿Eliminar este suplemento?')) {
+                const { error } = await _supabase.from('suplementos').delete().eq('id', id);
+                if (!error) fetchStudentData(selectedStudentId);
+            }
+        }
+
+        function renderNotes(notes) {
+            const container = document.getElementById('notes-container');
+            if (!notes || notes.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-xs italic p-4 text-center border border-dashed border-white/5 rounded-2xl">Sin notas para hoy</p>';
+                return;
+            }
+            container.innerHTML = notes.map(n => `
+                <div class="relative group">
+                    <p class="text-slate-400 text-sm leading-relaxed italic bg-slate-900/50 p-4 rounded-2xl border border-white/5 mb-3">
+                        "${n.contenido}"
+                    </p>
+                    <div class="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity no-export">
+                        <button onclick='editNote(${JSON.stringify(n).replace(/'/g, "&apos;")})' class="p-1 bg-slate-800 rounded-lg hover:text-white transition-colors"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="deleteNote('${n.id}')" class="p-1 bg-slate-800 rounded-lg hover:text-rose-500 transition-colors"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function editNote(n) {
+            editingNoteId = n.id;
+            document.getElementById('note-id-input').value = n.id;
+            document.getElementById('note-content').value = n.contenido;
+            openModal('modal-note');
+        }
+
+        async function deleteNote(id) {
+            if (confirm('¿Eliminar esta nota?')) {
+                const { error } = await _supabase.from('notas').delete().eq('id', id);
+                if (!error) fetchStudentData(selectedStudentId);
+            }
+        }
+
+        // Envío de Formulario de Suplemento
+        document.getElementById('supplement-form').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!selectedStudentId) return alert("Selecciona un alumno primero");
+
+            const data = {
+                alumno_id: selectedStudentId,
+                fecha: currentPlanDate,
+                nombre: document.getElementById('supp-name').value,
+                dosis: document.getElementById('supp-dosage').value
+            };
+
+            const id = document.getElementById('supp-id-input').value;
+            let result;
+            if (id) result = await _supabase.from('suplementos').update(data).eq('id', id);
+            else result = await _supabase.from('suplementos').insert([data]);
+
+            if (result.error) alert("Error: " + result.error.message);
+            else {
+                closeModal('modal-supplement');
+                await fetchStudentData(selectedStudentId);
+            }
+        };
+
+        // Envío de Formulario de Nota
+        document.getElementById('note-form').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!selectedStudentId) return alert("Selecciona un alumno primero");
+
+            const data = {
+                alumno_id: selectedStudentId,
+                fecha: currentPlanDate,
+                contenido: document.getElementById('note-content').value
+            };
+
+            const id = document.getElementById('note-id-input').value;
+            let result;
+            if (id) result = await _supabase.from('notas').update(data).eq('id', id);
+            else result = await _supabase.from('notas').insert([data]);
+
+            if (result.error) alert("Error: " + result.error.message);
+            else {
+                closeModal('modal-note');
+                await fetchStudentData(selectedStudentId);
+            }
+        };
+
+        // Envío de Formulario de Alimento
+        document.getElementById('food-form').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!selectedStudentId) return alert("Selecciona un alumno primero");
+
+            const foodData = {
+                'alumno_id': selectedStudentId,
+                'fecha': document.getElementById('food-date').value,
+                'nombre_comida': document.getElementById('food-meal-name').value,
+                'Alimento': document.getElementById('food-name').value,
+                'Tipo': document.getElementById('food-type').value,
+                'Porción': document.getElementById('food-qty').value,
+                'Calorías': parseFloat(document.getElementById('food-cal').value),
+                'Proteínas (g)': parseFloat(document.getElementById('food-p').value),
+                'Carbohidratos (g)': parseFloat(document.getElementById('food-c').value),
+                'Grasas (g)': parseFloat(document.getElementById('food-g').value)
+            };
+
+            const currentId = document.getElementById('meal-id-input').value.trim();
+
+            let result;
+            if (currentId && currentId !== "null" && currentId !== "") {
+                result = await _supabase.from('comidas').update(foodData).eq('id', currentId);
+            } else {
+                result = await _supabase.from('comidas').insert([foodData]);
+            }
+            
+            if (result.error) {
+                console.error("Error al guardar:", result.error);
+                alert("Error al guardar: " + result.error.message);
+            } else {
+                const savedDate = document.getElementById('food-date').value;
+                editingFoodId = null;
+                closeModal('modal-add-food');
+                // Actualizar la fecha del dashboard si guardamos en una fecha distinta
+                if(savedDate !== currentPlanDate) changePlanDate(savedDate);
+                e.target.reset();
+                await fetchStudentData(selectedStudentId);
+            }
+        };
+
+        // Envío de Formulario de Alumno
+        document.getElementById('student-form').onsubmit = async (e) => {
+            e.preventDefault();
+
+            const studentData = {
+                full_name: document.getElementById('student-name').value,
+                objective: document.getElementById('student-objective').value,
+                gender: document.getElementById('student-gender').value,
+                activity_level: document.getElementById('student-activity').value,
+                current_weight: parseFloat(document.getElementById('student-weight').value),
+                height: parseFloat(document.getElementById('student-height').value),
+                age: parseInt(document.getElementById('student-age').value),
+                target_calories: calculateHarrisBenedict()
+            };
+            
+            console.log("Registrando alumno en Supabase...", studentData);
+            
+            if (isEditingStudent) {
+                const { error } = await _supabase.from('profiles').update(studentData).eq('id', selectedStudentId);
+                if (error) {
+                    alert("Error al actualizar: " + error.message);
+                } else {
+                    closeModal('modal-new-student');
+                    await loadStudents();
+                    await selectStudent(selectedStudentId);
+                }
+            } else {
+                const { data, error } = await _supabase.from('profiles').insert([studentData]).select();
+                if (error) {
+                    alert("Error al registrar alumno: " + error.message);
+                } else {
+                    closeModal('modal-new-student');
+                    e.target.reset();
+                    await loadStudents(); // Recargar lista lateral
+                    if (data && data.length > 0) {
+                        selectStudent(data[0].id); // Seleccionar automáticamente al nuevo alumno
+                    }
+                }
+            }
+            isEditingStudent = false;
+        };
+
+        async function exportPlanToPDF() {
+            if (!selectedStudentId) return alert("Selecciona un alumno primero");
+            
+            const element = document.querySelector('main');
+            const studentName = currentStudent ? currentStudent.full_name.replace(/\s+/g, '_') : 'Alumno';
+            const date = currentPlanDate;
+
+            // Formatear fecha para el PDF
+            const dateObj = new Date(date + 'T12:00:00');
+            const formattedDate = dateObj.toLocaleDateString('es-ES', { 
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+            });
+            document.getElementById('pdf-date-val').innerText = formattedDate;
+
+            // Configuración del PDF
+            const opt = {
+                margin: [15, 10, 15, 10],
+                filename: `Plan_${studentName}_${date}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2, 
+                    useCORS: true, 
+                    letterRendering: true,
+                    backgroundColor: '#ffffff',
+                    ignoreElements: (el) => el.classList.contains('no-export'),
+                    onclone: (clonedDoc) => {
+                        // Aplicamos la clase al clon para que el PDF salga con estilo claro
+                        // pero el usuario nunca verá el cambio en su pantalla
+                        clonedDoc.body.classList.add('pdf-export-mode');
+                    }
+                },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            try {
+                await html2pdf().set(opt).from(element).save();
+            } catch (err) {
+                console.error("Error PDF:", err);
+            }
+        }
+
+        function init() {
+            document.getElementById('plan-date-selector').value = currentPlanDate;
+            loadStudents();
+            lucide.createIcons();
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
