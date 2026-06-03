@@ -227,7 +227,7 @@
         </div>
 
         <div class="pt-8 border-t border-slate-800">
-            <button onclick="isEditingStudent = false; openModal('modal-new-student')" class="w-full accent-gradient text-slate-950 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-lime-500/10 hover:scale-[1.02] transition-transform">
+            <button id="btn-sidebar-new-student" onclick="isEditingStudent = false; openModal('modal-new-student')" class="w-full accent-gradient text-slate-950 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-lime-500/10 hover:scale-[1.02] transition-transform">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i> Nuevo Alumno
             </button>
             <button onclick="handleLogout()" class="w-full mt-4 bg-slate-900 border border-slate-800 text-slate-400 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-xs hover:bg-rose-500/10 hover:text-rose-500 transition-all">
@@ -398,7 +398,7 @@
         <!-- 3. PLANIFICADOR DE COMIDAS -->
         <section class="space-y-6">
             <div class="flex items-center justify-between px-2">
-                <div class="flex items-center gap-4">
+                <div id="plan-header-actions" class="flex items-center gap-4">
                     <h3 class="text-2xl font-extrabold flex items-center gap-3">
                         <i data-lucide="calendar-days" class="text-lime-400"></i> Plan Nutricional
                     </h3>
@@ -408,6 +408,30 @@
                     <button onclick="openModal('modal-library-food')" class="bg-slate-800 text-lime-400 border border-lime-400/20 px-4 py-2 rounded-xl hover:bg-slate-700 transition-all font-bold text-xs flex items-center gap-2 no-export" title="Añadir nuevo alimento a la base de datos">
                         <i data-lucide="database" class="w-4 h-4"></i> Añadir Alimento
                     </button>
+                </div>
+            </div>
+
+            <!-- CONTENEDOR DE BLOQUEO (Solo visible si el alumno no está activo) -->
+            <div id="activation-block" class="hidden">
+                <div class="glass-card rounded-[3rem] p-12 text-center border-2 border-dashed border-lime-400/20 bg-lime-400/[0.02] relative overflow-hidden">
+                    <div class="absolute -top-10 -right-10 opacity-5">
+                        <i data-lucide="lock" class="w-64 h-64 text-lime-400"></i>
+                    </div>
+                    
+                    <div class="max-w-md mx-auto space-y-6 relative z-10">
+                        <div class="w-20 h-20 bg-lime-400/10 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-lime-400/20">
+                            <i data-lucide="lock" class="text-lime-400 w-10 h-10"></i>
+                        </div>
+                    <h4 class="text-3xl font-black italic tracking-tighter text-white">ACCESO RESTRINGIDO</h4>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                        ¡Hola! Tu plan nutricional personalizado está a un solo paso. 
+                            Para activar tu acceso completo y visualizar tus comidas, por favor contacta con nosotros.
+                        </p>
+                        <a href="https://wa.me/tu-numero-aqui" target="_blank" class="inline-flex items-center gap-3 bg-lime-400 text-slate-950 px-8 py-4 rounded-2xl font-black hover:scale-105 transition-all shadow-xl shadow-lime-500/20 uppercase text-xs tracking-widest">
+                            <i data-lucide="message-circle" class="w-5 h-5"></i>
+                            Activar cuenta vía WhatsApp
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -423,7 +447,7 @@
                     <h4 class="text-xl font-bold flex items-center gap-3 italic">
                         <i data-lucide="pill" class="text-lime-400"></i> Suplementación
                     </h4>
-                    <button onclick="openModal('modal-supplement')" class="p-2 bg-lime-400/10 hover:bg-lime-400/20 rounded-xl transition-colors no-export">
+                    <button id="btn-add-supplement" onclick="openModal('modal-supplement')" class="p-2 bg-lime-400/10 hover:bg-lime-400/20 rounded-xl transition-colors no-export">
                         <i data-lucide="plus" class="w-4 h-4 text-lime-400"></i>
                     </button>
                 </div>
@@ -437,7 +461,7 @@
                     <h4 class="text-xl font-bold flex items-center gap-3 italic text-slate-300">
                         <i data-lucide="sticky-note" class="text-slate-400"></i> Notas Estratégicas
                     </h4>
-                    <button onclick="openModal('modal-note')" class="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors no-export">
+                    <button id="btn-add-note" onclick="openModal('modal-note')" class="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors no-export">
                         <i data-lucide="plus" class="w-4 h-4 text-slate-400"></i>
                     </button>
                 </div>
@@ -1118,9 +1142,10 @@
             }
         }
 
-        async function selectStudent(id) {
+        async function selectStudent(id, studentObject = null) {
             selectedStudentId = id;
-            currentStudent = allStudents.find(s => s.id === id);
+            // Si pasamos el objeto directamente (onboarding), lo usamos; si no, buscamos en la lista cargada
+            currentStudent = studentObject || allStudents.find(s => s.id === id);
             selectedStudentCalories = currentStudent.target_calories || 2800;
             
             // Actualizar Nombre y mostrar acciones
@@ -1467,9 +1492,53 @@
             renderDashboard(formattedPlan);
         }
 
-        function renderDashboard(plan) {
+        async function renderDashboard(plan) {
+            const { data: authData } = await _supabase.auth.getUser();
+            const user = authData?.user;
             const target = selectedStudentCalories || plan.target_calories || 0;
             
+            // Lógica de Bloqueo:
+            // Bloqueamos si el perfil es inactivo Y el usuario es 'user' (uso personal) 
+            // O si es un coach viendo su propio perfil inicial (el nombre coincide)
+            const isInactive = currentStudent && (currentStudent.activo === false || currentStudent.activo === null);
+            const isOwner = user && (user.user_metadata.role === 'user' || currentStudent?.full_name === user.user_metadata.full_name);
+            
+            const shouldBlock = isInactive && isOwner;
+
+            const mealListContainer = document.getElementById('meal-list');
+            const activationBlock = document.getElementById('activation-block');
+            const planActions = document.getElementById('plan-header-actions');
+
+            // Botones adicionales a controlar
+            const btnNewStudent = document.getElementById('btn-sidebar-new-student');
+            const btnAddSupplement = document.getElementById('btn-add-supplement');
+            const btnAddNote = document.getElementById('btn-add-note');
+
+            // Reseteamos visibilidad por defecto
+            activationBlock.classList.add('hidden');
+            mealListContainer.classList.remove('hidden');
+            if (planActions) planActions.querySelectorAll('button').forEach(btn => btn.classList.remove('hidden'));
+            if (btnNewStudent) btnNewStudent.classList.remove('hidden');
+            if (btnAddSupplement) btnAddSupplement.classList.remove('hidden');
+            if (btnAddNote) btnAddNote.classList.remove('hidden');
+
+            if (shouldBlock) {
+                mealListContainer.classList.add('hidden');
+                activationBlock.classList.remove('hidden');
+                if (planActions) planActions.querySelectorAll('button').forEach(btn => btn.classList.add('hidden'));
+                
+                // Ocultar botones solicitados cuando el acceso está restringido
+                if (btnNewStudent) btnNewStudent.classList.add('hidden');
+                if (btnAddSupplement) btnAddSupplement.classList.add('hidden');
+                if (btnAddNote) btnAddNote.classList.add('hidden');
+
+                // Si está bloqueado, forzamos los contadores a cero y salimos
+                updateMacroDisplay(0, 0, 0, 0, 0, 0, target);
+                return; 
+            } else {
+                // Si no está bloqueado, procedemos normal
+            }
+
             let consumed = 0;
             let pTotGlobal = 0, cTotGlobal = 0, gTotGlobal = 0, fTotGlobal = 0, wTotGlobal = 0;
 
@@ -1486,12 +1555,25 @@
                 });
             }
 
-            // Actualizar tarjetas superiores
-            document.getElementById('current-p').innerText = `${Math.round(pTotGlobal)}g`;
-            document.getElementById('current-c').innerText = `${Math.round(cTotGlobal)}g`;
-            document.getElementById('current-g').innerText = `${Math.round(gTotGlobal)}g`;
-            document.getElementById('current-f').innerText = `${Math.round(fTotGlobal)}g`;
-            document.getElementById('current-w').innerText = `${wTotGlobal.toFixed(1)}L`;
+            updateMacroDisplay(consumed, pTotGlobal, cTotGlobal, gTotGlobal, fTotGlobal, wTotGlobal, target);
+            
+            // Renderizar Comidas
+            if (!plan.meals || plan.meals.length === 0) {
+                mealListContainer.innerHTML = '<div class="glass-card p-12 text-center text-slate-500 rounded-[2rem] border-dashed border-2 border-white/5 italic">No hay comidas programadas para esta fecha. Pulsa "Nueva Comida" para empezar.</div>';
+                return;
+            }
+
+            renderMealCards(plan.meals, mealListContainer);
+            lucide.createIcons();
+        }
+
+        // Función auxiliar para actualizar los números de la interfaz (limpieza de código)
+        function updateMacroDisplay(consumed, p, c, g, f, w, target) {
+            document.getElementById('current-p').innerText = `${Math.round(p)}g`;
+            document.getElementById('current-c').innerText = `${Math.round(c)}g`;
+            document.getElementById('current-g').innerText = `${Math.round(g)}g`;
+            document.getElementById('current-f').innerText = `${Math.round(f)}g`;
+            document.getElementById('current-w').innerText = `${w.toFixed(1)}L`;
 
             // Metas sugeridas (puedes personalizarlas después en el perfil del alumno)
             document.getElementById('target-p').innerText = `Meta: ${Math.round(target * 0.3 / 4)}g`;
@@ -1504,15 +1586,11 @@
             const percentage = target > 0 ? Math.min(Math.round((consumed / target) * 100), 100) : 0;
             document.getElementById('calorie-percentage').innerText = `${percentage}% COMPLETADO`;
             document.getElementById('calorie-progress-bar').style.width = `${percentage}%`;
-            
-            // Renderizar Comidas
-            const container = document.getElementById('meal-list');
-            if (!plan.meals || plan.meals.length === 0) {
-                container.innerHTML = '<div class="glass-card p-12 text-center text-slate-500 rounded-[2rem] border-dashed border-2 border-white/5 italic">No hay comidas programadas para esta fecha. Pulsa "Nueva Comida" para empezar.</div>';
-                return;
-            }
+        }
 
-            container.innerHTML = plan.meals.sort((a,b) => a.sorting_order - b.sorting_order).map((meal, idx) => {
+        // Función auxiliar para renderizar las tarjetas (limpieza de código)
+        function renderMealCards(meals, container) {
+            container.innerHTML = meals.sort((a,b) => (a.sorting_order || 0) - (b.sorting_order || 0)).map((meal, idx) => {
                 const pTot = meal.meal_items.reduce((s, i) => s + (i.protein || 0), 0); 
                 const cTot = meal.meal_items.reduce((s, i) => s + (i.carbs || 0), 0);
                 const gTot = meal.meal_items.reduce((s, i) => s + (i.fat || 0), 0);
@@ -1583,7 +1661,6 @@
                     </div>
                 </div>`;
             }).join('');
-            lucide.createIcons();
         }
 
         function renderSupplements(supplements) {
@@ -1861,7 +1938,8 @@
             if (profileError) {
                 console.error("Error al crear perfil inicial:", profileError);
             } else {
-                // Éxito: Mostrar notificación y entrar al dashboard
+                    // Actualizamos la lista local inmediatamente para que selectStudent lo encuentre
+                    allStudents.push(profileData[0]);
                 document.getElementById('modal-onboarding').classList.add('hidden');
                 document.getElementById('main-sidebar').classList.remove('hidden');
                 document.getElementById('main-content').classList.remove('hidden');
@@ -1870,10 +1948,10 @@
                 setTimeout(() => {
                     document.getElementById('onboarding-success-popup').classList.add('hidden');
                 }, 8000);
-
+                    
                 await init();
                 if (profileData && profileData.length > 0) {
-                    selectStudent(profileData[0].id);
+                        selectStudent(profileData[0].id, profileData[0]);
                 }
             }
         };
