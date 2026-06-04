@@ -183,7 +183,10 @@
                     <input type="email" id="auth-email" required class="w-full bg-slate-900/50 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-sm" placeholder="coach@powerplan.com">
                 </div>
                 <div class="space-y-2">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 px-2">Contraseña</label>
+                    <div class="flex justify-between items-center px-2">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500">Contraseña</label>
+                        <button type="button" onclick="handleForgotPassword()" class="text-[10px] font-bold text-lime-400 hover:underline">¿Olvidó su contraseña?</button>
+                    </div>
                     <input type="password" id="auth-password" required class="w-full bg-slate-900/50 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-sm" placeholder="••••••••">
                 </div>
                 <button type="submit" id="auth-submit" class="w-full accent-gradient text-slate-950 font-extrabold py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-transform mt-4">
@@ -760,6 +763,22 @@
         </div>
     </div>
 
+    <!-- MODAL: RESTABLECER CONTRASEÑA -->
+    <div id="modal-reset-password" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[250] hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-[2rem] p-8 border border-white/10 shadow-2xl">
+            <h3 class="text-2xl font-bold mb-6 text-white italic">Nueva Contraseña</h3>
+            <form id="reset-password-form" class="space-y-4">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase px-2">Introduce tu nueva contraseña</label>
+                    <input type="password" id="new-password" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-white">
+                </div>
+                <button type="submit" class="w-full accent-gradient text-slate-950 font-bold py-4 rounded-2xl shadow-lg mt-4 transition-transform hover:scale-[1.01]">
+                    Actualizar Contraseña
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- MODAL: INFO CALORÍAS -->
     <div id="modal-calorie-info" onclick="closeModal('modal-calorie-info')" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
         <div class="glass-card w-full max-w-lg rounded-[2rem] p-8 border border-white/10 shadow-2xl" onclick="event.stopPropagation()">
@@ -1088,6 +1107,11 @@
         _supabase.auth.onAuthStateChange((event, session) => {
             const user = session?.user;
 
+            if (event === "PASSWORD_RECOVERY") {
+                openModal('modal-reset-password');
+                return;
+            }
+
             if (session) {
                 // Si hay sesión pero el usuario no existe en la base de datos (fue borrado manualmente)
                 // o no tiene metadata, mostramos onboarding.
@@ -1126,6 +1150,32 @@
                 document.getElementById('modal-onboarding').classList.add('hidden');
                 document.getElementById('mobile-top-bar').classList.add('hidden');
                 document.getElementById('mobile-top-bar').classList.remove('flex');
+            }
+        });
+
+        async function handleForgotPassword() {
+            const email = document.getElementById('auth-email').value;
+            if (!email) {
+                alert("Por favor, introduce tu correo electrónico en el campo de email para enviarte el enlace de recuperación.");
+                return;
+            }
+            const { error } = await _supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + window.location.pathname,
+            });
+            if (error) alert("Error: " + error.message);
+            else alert("¡Enlace enviado! Revisa tu bandeja de entrada.");
+        }
+
+        document.getElementById('reset-password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newPassword = document.getElementById('new-password').value;
+            const { error } = await _supabase.auth.updateUser({ password: newPassword });
+            
+            if (error) {
+                alert("Error al actualizar: " + error.message);
+            } else {
+                alert("Contraseña actualizada con éxito. Ya puedes usar tu cuenta.");
+                closeModal('modal-reset-password');
             }
         });
 
