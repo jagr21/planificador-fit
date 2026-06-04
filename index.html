@@ -392,12 +392,12 @@
                         <p id="target-f" class="text-[10px] text-emerald-400 font-bold">Meta: --g</p>
                     </div>
                 </div>
-                <!-- Water -->
-                <div class="glass-card rounded-3xl p-5 flex flex-col justify-between border-b-4 border-cyan-500/50 col-span-2 md:col-span-1">
-                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Agua</span>
+                <!-- Azúcar -->
+                <div class="glass-card rounded-3xl p-5 flex flex-col justify-between border-b-4 border-purple-500/50 col-span-2 md:col-span-1">
+                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Azúcar</span>
                     <div class="mt-2">
-                        <span id="current-w" class="text-2xl font-bold text-cyan-400">0L</span>
-                        <p id="target-w" class="text-[10px] text-cyan-400 font-bold">Meta: --L</p>
+                        <span id="current-s" class="text-2xl font-bold text-purple-400">0g</span>
+                        <p id="target-s" class="text-[10px] text-purple-400 font-bold">Meta: < 50g</p>
                     </div>
                 </div>
             </div>
@@ -413,7 +413,7 @@
                     <button onclick="openModal('modal-add-food')" class="bg-lime-400 text-slate-950 px-4 py-2 rounded-xl hover:scale-105 transition-all font-bold text-xs flex items-center gap-2 no-export" title="Añadir alimento a una comida">
                         <i data-lucide="plus-circle" class="w-4 h-4"></i> Nueva Comida
                     </button>
-                    <button onclick="openModal('modal-library-food')" class="bg-slate-800 text-lime-400 border border-lime-400/20 px-4 py-2 rounded-xl hover:bg-slate-700 transition-all font-bold text-xs flex items-center gap-2 no-export" title="Añadir nuevo alimento a la base de datos">
+                    <button onclick="openLibraryModalForNew()" class="bg-slate-800 text-lime-400 border border-lime-400/20 px-4 py-2 rounded-xl hover:bg-slate-700 transition-all font-bold text-xs flex items-center gap-2 no-export" title="Añadir nuevo alimento a la base de datos">
                         <i data-lucide="database" class="w-4 h-4"></i> Añadir Alimento
                     </button>
                 </div>
@@ -545,6 +545,16 @@
                         <input type="number" step="0.1" id="food-g" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-rose-400 transition-all">
                     </div>
                 </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Fibra (g)</label>
+                        <input type="number" step="0.1" id="food-f" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-emerald-400 transition-all">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Azúcar (g)</label>
+                        <input type="number" step="0.1" id="food-s" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-purple-400 transition-all">
+                    </div>
+                </div>
                 <div class="flex gap-3 mt-6">
                     <button type="button" id="btn-delete-food" onclick="deleteFoodItem()" class="hidden flex-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 font-bold py-4 rounded-2xl border border-rose-500/20 transition-all">
                         Eliminar
@@ -571,6 +581,7 @@
             <p class="text-xs text-slate-500 mb-6 px-2 italic">Este alimento se guardará permanentemente en tu biblioteca para futuras búsquedas.</p>
             
             <form id="library-food-form" class="space-y-4" onsubmit="saveFoodToLibrary(event)">
+                <input type="hidden" id="lib-food-id">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-2">
                         <label class="text-xs font-bold text-slate-500 uppercase px-2">Nombre del Alimento</label>
@@ -609,6 +620,16 @@
                     <div class="space-y-2">
                         <label class="text-xs font-bold text-slate-500 uppercase px-2">Grasa (g)</label>
                         <input type="number" step="0.1" id="lib-food-g" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-rose-400">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Fibra (g)</label>
+                        <input type="number" step="0.1" id="lib-food-f" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-emerald-400">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Azúcar (g)</label>
+                        <input type="number" step="0.1" id="lib-food-s" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-purple-400">
                     </div>
                 </div>
                 <button type="submit" class="w-full accent-gradient text-slate-950 font-black py-4 rounded-2xl shadow-lg mt-4 transition-transform hover:scale-[1.01] uppercase tracking-tighter">Guardar en Biblioteca</button>
@@ -1079,7 +1100,10 @@
                     // Usuario autenticado y con perfil completo
                     document.getElementById('auth-screen').classList.add('hidden');
                     document.getElementById('modal-onboarding').classList.add('hidden');
-                    document.getElementById('main-sidebar').classList.remove('hidden');
+                    // Solo mostramos la sidebar automáticamente si estamos en escritorio
+                    if (window.innerWidth >= 768) {
+                        document.getElementById('main-sidebar').classList.remove('hidden');
+                    }
                     document.getElementById('main-content').classList.remove('hidden');
                     
                     const coachName = user.user_metadata.full_name;
@@ -1290,8 +1314,11 @@
             renderStudentList(allStudents); // Refrescar para visualización de seleccionado
             await fetchStudentData(id);
             
-            // Cerrar sidebar en móvil tras seleccionar
-            if (window.innerWidth < 768) toggleSidebar();
+            // Cerrar sidebar en móvil tras seleccionar, pero solo si está abierta
+            if (window.innerWidth < 768) {
+                const sidebar = document.getElementById('main-sidebar');
+                if (sidebar && !sidebar.classList.contains('-translate-x-full')) toggleSidebar();
+            }
         }
 
         async function updateManualCalories() {
@@ -1422,21 +1449,32 @@
                         const fullDisplayName = detail ? `${name} <span class="text-lime-500/50 text-[10px] italic">(${detail})</span>` : name;
 
                         return `
-                            <div onclick='selectFoodFromLibrary(${JSON.stringify(food).replace(/'/g, "&apos;")})' 
-                                 class="p-4 hover:bg-white/10 cursor-pointer border-b border-white/5 last:border-0 text-sm group transition-all">
-                                <div class="flex justify-between items-start">
-                                    <span class="font-bold text-white group-hover:text-lime-400 transition-colors pr-2">${fullDisplayName}</span>
-                                    <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-lg font-mono">${serving}</span>
+                            <div class="p-4 hover:bg-white/10 border-b border-white/5 last:border-0 text-sm group transition-all flex justify-between items-center">
+                                <div onclick='selectFoodFromLibrary(${JSON.stringify(food).replace(/'/g, "&apos;")})' class="flex-1 cursor-pointer">
+                                    <div class="flex justify-between items-start">
+                                        <span class="font-bold text-white group-hover:text-lime-400 transition-colors pr-2">${fullDisplayName}</span>
+                                        <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-lg font-mono">${serving}</span>
+                                    </div>
+                                    <div class="flex gap-3 text-[10px] mt-1 italic text-slate-500">
+                                        <span class="text-blue-400/80">P: ${p}g</span> | 
+                                        <span class="text-amber-400/80">C: ${c}g</span> | 
+                                        <span class="text-rose-400/80">G: ${g}g</span> | 
+                                        <span class="text-emerald-400/80">F: ${food.fibra || 0}g</span> | 
+                                        <span class="text-slate-400 font-bold">${cal} kcal</span>
+                                    </div>
                                 </div>
-                                <div class="flex gap-3 text-[10px] mt-1 italic text-slate-500">
-                                    <span class="text-blue-400/80">P: ${p}g</span> | 
-                                    <span class="text-amber-400/80">C: ${c}g</span> | 
-                                    <span class="text-rose-400/80">G: ${g}g</span> | 
-                                    <span class="text-slate-400 font-bold">${cal} kcal</span>
+                                <div class="flex gap-1 ml-4 no-export">
+                                    <button onclick='event.stopPropagation(); editFoodLibraryItem(${JSON.stringify(food).replace(/'/g, "&apos;")})' class="p-1.5 hover:bg-lime-400/20 text-slate-500 hover:text-lime-400 rounded-lg transition-colors" title="Editar de la DB">
+                                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <button onclick="event.stopPropagation(); deleteFoodLibraryItem('${food.id}', '${name.replace(/'/g, "\\'")}')" class="p-1.5 hover:bg-rose-500/20 text-slate-500 hover:text-rose-500 rounded-lg transition-colors" title="Borrar de la DB">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    </button>
                                 </div>
                             </div>
                         `;
                     }).join('');
+                    lucide.createIcons();
                     resultsBox.classList.remove('hidden');
                 } else {
                     resultsBox.innerHTML = `<div class="p-4 text-slate-500 text-xs italic text-center">No se encontraron resultados para "${searchTerm}"</div>`;
@@ -1452,6 +1490,8 @@
             const p = food['Proteínas (g)'] || food.protein || food.proteins || 0;
             const c = food['Carbohidratos (g)'] || food.carbs || food.carbohydrates || 0;
             const g = food['Grasas (g)'] || food.fat || food.fats || 0;
+            const f = food.fibra || 0;
+            const s = food.azucar || 0;
             const cal = food['Calorías'] || food.calories || food.kcal || 0;
             const type = food.Tipo || food.category || 'Proteína';
 
@@ -1461,6 +1501,8 @@
                 p: p,
                 c: c,
                 g: g,
+                f: f,
+                s: s,
                 cal: cal
             };
 
@@ -1469,6 +1511,8 @@
             document.getElementById('food-p').value = p;
             document.getElementById('food-c').value = c;
             document.getElementById('food-g').value = g;
+            document.getElementById('food-f').value = f;
+            document.getElementById('food-s').value = s;
             document.getElementById('food-qty').value = serving;
             document.getElementById('food-type').value = type;
             document.getElementById('search-results').classList.add('hidden');
@@ -1487,6 +1531,8 @@
                 p: item.protein,
                 c: item.carbs,
                 g: item.fat,
+                f: item.fibra || 0,
+                s: item.azucar || 0,
                 cal: item.Calorías
             };
 
@@ -1498,6 +1544,8 @@
             document.getElementById('food-p').value = item.protein;
             document.getElementById('food-c').value = item.carbs;
             document.getElementById('food-g').value = item.fat;
+            document.getElementById('food-f').value = item.fibra || 0;
+            document.getElementById('food-s').value = item.azucar || 0;
         }
 
         // Nueva función para calcular macros proporcionalmente a la cantidad introducida
@@ -1513,6 +1561,8 @@
             document.getElementById('food-p').value = (baseFoodData.p * ratio).toFixed(1);
             document.getElementById('food-c').value = (baseFoodData.c * ratio).toFixed(1);
             document.getElementById('food-g').value = (baseFoodData.g * ratio).toFixed(1);
+            document.getElementById('food-f').value = (baseFoodData.f * ratio).toFixed(1);
+            document.getElementById('food-s').value = (baseFoodData.s * ratio).toFixed(1);
             document.getElementById('food-cal').value = Math.round(baseFoodData.cal * ratio);
         }
 
@@ -1581,6 +1631,15 @@
         }
 
         function processMeals(foodEntries) {
+            // Definimos el orden lógico de las comidas para que se muestren siempre igual
+            const mealOrderMap = {
+                'Desayuno': 1,
+                'Almuerzo': 2,
+                'Merienda': 3,
+                'Cena': 4,
+                'Snack': 5
+            };
+
             // Agrupamos los alimentos por 'nombre_comida' (Desayuno, Almuerzo...)
             const grouped = foodEntries.reduce((acc, item) => {
                 const mealName = item.nombre_comida || 'Otros';
@@ -1594,6 +1653,7 @@
                 target_calories: selectedStudentCalories,
                 meals: Object.keys(grouped).map(name => ({
                     name: name,
+                    sorting_order: mealOrderMap[name] || 99, // Si no está en el mapa, va al final
                     scheduled_time: grouped[name][0].hora_sugerida || 'Sin horario',
                     meal_items: grouped[name].map(i => ({
                         id: i.id,
@@ -1607,7 +1667,7 @@
                         nutriente_tipo: i.Tipo,
                         hora_sugerida: i.hora_sugerida || '00:00:00',
                         fibra: i.fibra || 0,
-                        agua: i.agua || 0,
+                        azucar: i.azucar || 0,
                         Calorías: i.Calorías || 0
                     }))
                 }))
@@ -1664,7 +1724,7 @@
             }
 
             let consumed = 0;
-            let pTotGlobal = 0, cTotGlobal = 0, gTotGlobal = 0, fTotGlobal = 0, wTotGlobal = 0;
+            let pTotGlobal = 0, cTotGlobal = 0, gTotGlobal = 0, fTotGlobal = 0, sTotGlobal = 0;
 
             if (plan.meals) {
                 plan.meals.forEach(m => {
@@ -1674,12 +1734,12 @@
                         cTotGlobal += (i.carbs || 0);
                         gTotGlobal += (i.fat || 0);
                         fTotGlobal += (i.fibra || 0);
-                        wTotGlobal += (i.agua || 0);
+                        sTotGlobal += (i.azucar || 0);
                     });
                 });
             }
 
-            updateMacroDisplay(consumed, pTotGlobal, cTotGlobal, gTotGlobal, fTotGlobal, wTotGlobal, target);
+            updateMacroDisplay(consumed, pTotGlobal, cTotGlobal, gTotGlobal, fTotGlobal, sTotGlobal, target);
             
             // Renderizar Comidas
             if (!plan.meals || plan.meals.length === 0) {
@@ -1692,12 +1752,12 @@
         }
 
         // Función auxiliar para actualizar los números de la interfaz (limpieza de código)
-        function updateMacroDisplay(consumed, p, c, g, f, w, target) {
+        function updateMacroDisplay(consumed, p, c, g, f, s, target) {
             document.getElementById('current-p').innerText = `${Math.round(p)}g`;
             document.getElementById('current-c').innerText = `${Math.round(c)}g`;
             document.getElementById('current-g').innerText = `${Math.round(g)}g`;
             document.getElementById('current-f').innerText = `${Math.round(f)}g`;
-            document.getElementById('current-w').innerText = `${w.toFixed(1)}L`;
+            document.getElementById('current-s').innerText = `${Math.round(s)}g`;
 
             // Metas sugeridas (puedes personalizarlas después en el perfil del alumno)
             document.getElementById('target-p').innerText = `Meta: ${Math.round(target * 0.3 / 4)}g`;
@@ -1919,7 +1979,9 @@
                 'Calorías': parseFloat(document.getElementById('food-cal').value),
                 'Proteínas (g)': parseFloat(document.getElementById('food-p').value),
                 'Carbohidratos (g)': parseFloat(document.getElementById('food-c').value),
-                'Grasas (g)': parseFloat(document.getElementById('food-g').value)
+                'Grasas (g)': parseFloat(document.getElementById('food-g').value),
+                'fibra': parseFloat(document.getElementById('food-f').value || 0),
+                'azucar': parseFloat(document.getElementById('food-s').value || 0)
             };
 
             const currentId = document.getElementById('meal-id-input').value.trim();
@@ -1951,6 +2013,7 @@
             const { data: userData } = await _supabase.auth.getUser();
             if (!userData?.user) return alert("Sesión no válida");
 
+            const libId = document.getElementById('lib-food-id').value;
             const foodData = {
                 'Alimento': document.getElementById('lib-food-name').value,
                 'Tipo': document.getElementById('lib-food-type').value,
@@ -1959,17 +2022,72 @@
                 'Proteínas (g)': parseFloat(document.getElementById('lib-food-p').value),
                 'Carbohidratos (g)': parseFloat(document.getElementById('lib-food-c').value),
                 'Grasas (g)': parseFloat(document.getElementById('lib-food-g').value),
+                'fibra': parseFloat(document.getElementById('lib-food-f').value || 0),
+                'azucar': parseFloat(document.getElementById('lib-food-s').value || 0),
                 'created_by': userData.user.id
             };
 
-            const { error } = await _supabase.from('biblioteca_alimentos').insert([foodData]);
-
-            if (error) {
-                alert("Error al guardar en la biblioteca: " + error.message);
+            let result;
+            if (libId) {
+                result = await _supabase.from('biblioteca_alimentos').update(foodData).eq('id', libId);
             } else {
-                alert("¡Alimento añadido a la biblioteca con éxito!");
+                result = await _supabase.from('biblioteca_alimentos').insert([foodData]);
+            }
+
+            if (result.error) {
+                alert("Error al guardar en la biblioteca: " + result.error.message);
+            } else {
+                alert(libId ? "¡Alimento actualizado con éxito!" : "¡Alimento añadido a la biblioteca con éxito!");
                 closeModal('modal-library-food');
                 e.target.reset();
+                
+                // Refrescar búsqueda si hay texto en el input de comida
+                const query = document.getElementById('food-name').value;
+                if (query) searchFoodLibrary(query);
+            }
+        }
+
+        function openLibraryModalForNew() {
+            document.getElementById('lib-food-id').value = '';
+            document.getElementById('library-food-form').reset();
+            const modal = document.getElementById('modal-library-food');
+            modal.querySelector('h3').innerHTML = '<i data-lucide="database"></i> Nuevo Alimento (DB)';
+            modal.querySelector('button[type="submit"]').innerText = 'Guardar en Biblioteca';
+            openModal('modal-library-food');
+            lucide.createIcons();
+        }
+
+        function editFoodLibraryItem(food) {
+            document.getElementById('lib-food-id').value = food.id;
+            document.getElementById('lib-food-name').value = food.Alimento || food.name || '';
+            document.getElementById('lib-food-type').value = food.Tipo || 'Proteína';
+            document.getElementById('lib-food-qty').value = food['Porción'] || '100g';
+            document.getElementById('lib-food-cal').value = food['Calorías'] || 0;
+            document.getElementById('lib-food-p').value = food['Proteínas (g)'] || 0;
+            document.getElementById('lib-food-c').value = food['Carbohidratos (g)'] || 0;
+            document.getElementById('lib-food-g').value = food['Grasas (g)'] || 0;
+            document.getElementById('lib-food-f').value = food.fibra || 0;
+            document.getElementById('lib-food-s').value = food.azucar || 0;
+
+            const modal = document.getElementById('modal-library-food');
+            modal.querySelector('h3').innerHTML = '<i data-lucide="edit-3"></i> Editar Alimento (DB)';
+            modal.querySelector('button[type="submit"]').innerText = 'Actualizar Alimento';
+
+            openModal('modal-library-food');
+            lucide.createIcons();
+        }
+
+        async function deleteFoodLibraryItem(id, name) {
+            if (confirm(`¿Estás seguro de que deseas eliminar permanentemente "${name}" de la biblioteca?`)) {
+                const { error } = await _supabase.from('biblioteca_alimentos').delete().eq('id', id);
+                if (error) {
+                    alert("Error al eliminar: " + error.message);
+                } else {
+                    alert("Alimento eliminado de la biblioteca.");
+                    // Refrescar búsqueda
+                    const query = document.getElementById('food-name').value;
+                    if (query) searchFoodLibrary(query);
+                }
             }
         }
 
@@ -2159,10 +2277,12 @@
         function toggleSidebar() {
             if (window.innerWidth >= 768) return;
             const sidebar = document.getElementById('main-sidebar');
+            
             const overlay = document.getElementById('sidebar-overlay');
             const isHidden = sidebar.classList.contains('-translate-x-full');
 
             if (isHidden) {
+                sidebar.classList.remove('hidden');
                 sidebar.classList.remove('-translate-x-full');
                 overlay.classList.remove('hidden');
                 document.body.classList.add('overflow-hidden');
