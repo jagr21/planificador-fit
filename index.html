@@ -1474,6 +1474,7 @@
                     .from('biblioteca_alimentos')
                     .select('*')
                     .ilike('Alimento', `%${searchTerm}%`)
+                    // Aquí buscamos en la biblioteca global
                     .limit(10);
                 
                 if (error) {
@@ -1487,6 +1488,8 @@
 
                 if (data && data.length > 0) {
                     resultsBox.innerHTML = data.map(food => {
+                        // Detectamos el ID de forma flexible (id o ID)
+                        const foodId = food.id || food.ID;
                         // Detectar el nombre y detalles adicionales para distinguir variaciones
                         const name = food.Alimento || food.name || food.food_name || food.nombre || food.producto || 'Alimento sin nombre';
                         const detail = food.Variedad || food.Marca || '';
@@ -1517,7 +1520,7 @@
                                     <button onclick='event.stopPropagation(); editFoodLibraryItem(${JSON.stringify(food).replace(/'/g, "&apos;")})' class="p-1.5 hover:bg-lime-400/20 text-slate-500 hover:text-lime-400 rounded-lg transition-colors" title="Editar de la DB">
                                         <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
                                     </button>
-                                    <button onclick="event.stopPropagation(); deleteFoodLibraryItem('${food.id}', '${name.replace(/'/g, "\\'")}')" class="p-1.5 hover:bg-rose-500/20 text-slate-500 hover:text-rose-500 rounded-lg transition-colors" title="Borrar de la DB">
+                                    <button onclick="event.stopPropagation(); deleteFoodLibraryItem('${foodId}', '${name.replace(/'/g, "\\'")}')" class="p-1.5 hover:bg-rose-500/20 text-slate-500 hover:text-rose-500 rounded-lg transition-colors" title="Borrar de la DB">
                                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                     </button>
                                 </div>
@@ -2037,7 +2040,7 @@
             const currentId = document.getElementById('meal-id-input').value.trim();
 
             let result;
-            if (currentId && currentId !== "null" && currentId !== "") {
+            if (currentId && currentId !== "null" && currentId !== "" && currentId !== "undefined") {
                 result = await _supabase.from('comidas').update(foodData).eq('id', currentId);
             } else {
                 result = await _supabase.from('comidas').insert([foodData]);
@@ -2063,7 +2066,10 @@
             const { data: userData } = await _supabase.auth.getUser();
             if (!userData?.user) return alert("Sesión no válida");
 
-            const libId = document.getElementById('lib-food-id').value;
+            const libIdRaw = document.getElementById('lib-food-id').value.trim();
+            // Aseguramos que el ID sea numérico si la base de datos usa enteros, o lo mantenemos como string si es UUID
+            const libId = (libIdRaw && !isNaN(libIdRaw)) ? Number(libIdRaw) : libIdRaw;
+
             const foodData = {
                 'Alimento': document.getElementById('lib-food-name').value,
                 'Tipo': document.getElementById('lib-food-type').value,
@@ -2073,26 +2079,34 @@
                 'Carbohidratos (g)': parseFloat(document.getElementById('lib-food-c').value),
                 'Grasas (g)': parseFloat(document.getElementById('lib-food-g').value),
                 'fibra': parseFloat(document.getElementById('lib-food-f').value || 0),
-                'azucar': parseFloat(document.getElementById('lib-food-s').value || 0),
-                'created_by': userData.user.id
+                'azucar': parseFloat(document.getElementById('lib-food-s').value || 0)
             };
 
             let result;
-            if (libId) {
-                result = await _supabase.from('biblioteca_alimentos').update(foodData).eq('id', libId);
+            if (libId && libId !== "" && libId !== "undefined") {
+                // Actualizar alimento existente en la biblioteca
+                // Intentamos con 'id' (minúsculas) que es el estándar
+                result = await _supabase.from('biblioteca_alimentos')
+                    .update(foodData)
+                    .eq('id', libId)
+                    .select(); // Forzamos a que devuelva los datos para confirmar impacto
             } else {
+                // Insertar nuevo alimento
+                foodData.created_by = userData.user.id;
                 result = await _supabase.from('biblioteca_alimentos').insert([foodData]);
             }
 
             if (result.error) {
                 alert("Error al guardar en la biblioteca: " + result.error.message);
+            } else if (libId && (!result.data || result.data.length === 0)) {
+                alert("Atención: No se pudo actualizar el registro. Es posible que no tengas permisos para editar este alimento o el ID sea incorrecto.");
             } else {
                 alert(libId ? "¡Alimento actualizado con éxito!" : "¡Alimento añadido a la biblioteca con éxito!");
                 closeModal('modal-library-food');
                 e.target.reset();
                 
-                // Refrescar búsqueda si hay texto en el input de comida
-                const query = document.getElementById('food-name').value;
+                // Refrescar la búsqueda actual para ver los cambios reflejados
+                const query = document.getElementById('food-name').value || document.getElementById('lib-food-name').value;
                 if (query) searchFoodLibrary(query);
             }
         }
@@ -2108,7 +2122,8 @@
         }
 
         function editFoodLibraryItem(food) {
-            document.getElementById('lib-food-id').value = food.id;
+            // Soporte para id o ID dependiendo de cómo se haya creado la tabla en Supabase
+            document.getElementById('lib-food-id').value = food.id || food.ID || '';
             document.getElementById('lib-food-name').value = food.Alimento || food.name || '';
             document.getElementById('lib-food-type').value = food.Tipo || 'Proteína';
             document.getElementById('lib-food-qty').value = food['Porción'] || '100g';
