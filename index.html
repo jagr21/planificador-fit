@@ -40,72 +40,113 @@
             margin: 0 !important;
         }
         .pdf-export-mode #pdf-date-header { 
-            display: block !important; 
+            display: flex !important; 
             padding: 15px 20px !important;
-            margin-bottom: 10px !important;
+            margin-bottom: 5px !important;
             border-radius: 0 !important;
+            border-bottom: 2px solid #000000 !important;
+            background: white !important;
         }
         .pdf-export-mode .glass-card {
             background: white !important;
-            border: 0.5px solid #cbd5e1 !important;
+            border: 1px solid #000000 !important;
             box-shadow: none !important;
-            color: #1e293b !important;
+            color: #000000 !important;
             backdrop-filter: none !important;
+            margin-bottom: 10px !important;
         }
+        /* Forzar fondo blanco en secciones específicas */
+        .pdf-export-mode section, 
+        .pdf-export-mode .lg\:col-span-5, 
+        .pdf-export-mode .lg\:col-span-7 { background: white !important; }
+
         .pdf-export-mode .text-slate-100,
         .pdf-export-mode .text-slate-200,
-        .pdf-export-mode .text-slate-300 { color: #0f172a !important; }
-        .pdf-export-mode .text-slate-400,
-        .pdf-export-mode .text-slate-500 { color: #334155 !important; }
+        .pdf-export-mode .text-slate-300 { color: #000000 !important; }
+        .pdf-export-mode .text-slate-400, .pdf-export-mode .text-slate-500 { color: #000000 !important; }
         .pdf-export-mode .text-white { color: #0f172a !important; }
         
-        /* Colores de acento optimizados para fondo blanco (más oscuros para contraste) */
         .pdf-export-mode .text-lime-400 { color: #365314 !important; } 
         .pdf-export-mode .text-blue-400 { color: #1e3a8a !important; } 
-        .pdf-export-mode .text-amber-500 { color: #78350f !important; } 
+        .pdf-export-mode .text-amber-400, .pdf-export-mode .text-amber-500 { color: #78350f !important; } 
         .pdf-export-mode .text-rose-400, .pdf-export-mode .text-rose-500 { color: #881337 !important; } 
         
-        /* Eliminación de fondos oscuros/grises y forzado a blanco puro */
         .pdf-export-mode .bg-slate-900, 
-        .pdf-export-mode .bg-slate-800,
-        .pdf-export-mode .bg-slate-800\/50,
-        .pdf-export-mode .bg-white\/5,
-        .pdf-export-mode .bg-white\/\[0\.02\],
-        .pdf-export-mode .bg-white\/\[0\.03\],
-        .pdf-export-mode tr,
+        .pdf-export-mode .bg-slate-800, 
+        .pdf-export-mode .bg-white\/5, 
         .pdf-export-mode .bg-\[\#020617\],
-        .pdf-export-mode .accent-gradient { 
+        .pdf-export-mode tr { 
             background: white !important; 
-            border: 0.5px solid #cbd5e1 !important;
+            border: 1px solid #000000 !important;
         }
         
-        /* Corregir barra de progreso en el PDF */
-        .pdf-export-mode #calorie-progress-bar { 
-            background: #65a30d !important; 
-            border: none !important;
+        .pdf-export-mode .accent-gradient,
+        .pdf-export-mode #calorie-progress-bar {
+            background: #bef264 !important;
+            border: 1px solid #000000 !important;
+            color: #000000 !important;
         }
 
-        .pdf-export-mode .border-white\/5, .pdf-export-mode .border-white\/10 { border-color: #cbd5e1 !important; }
+        /* --- MODO OSCURO PDF --- */
+        .pdf-dark-mode, .pdf-dark-mode main { background: #000000 !important; color: #ffffff !important; }
+        .pdf-dark-mode .glass-card { background: #000000 !important; border: 1px solid #ffffff !important; color: white !important; }
+        .pdf-dark-mode section, 
+        .pdf-dark-mode .lg\:col-span-5, 
+        .pdf-dark-mode .lg\:col-span-7 { background: #000000 !important; }
         
-        .pdf-export-mode table th { background: #f8fafc !important; color: #0f172a !important; letter-spacing: normal !important; padding: 4px 8px !important; }
+        .pdf-dark-mode .text-slate-400, .pdf-dark-mode .text-slate-500 { color: #ffffff !important; }
+        .pdf-dark-mode .text-white { color: white !important; }
+        .pdf-dark-mode .text-lime-400 { color: #bef264 !important; }
+        
+        .pdf-dark-mode .bg-slate-900, .pdf-dark-mode .bg-slate-800, .pdf-dark-mode .bg-white\/5, .pdf-dark-mode tr { 
+            background: #000000 !important; border-color: #ffffff !important; 
+        }
+        .pdf-dark-mode #pdf-date-header { background: #000000 !important; border-bottom: 2px solid #ffffff !important; }
+        .pdf-dark-mode #pdf-date-header h1 { color: white !important; }
+        .pdf-dark-mode table th { background: #000000 !important; color: #bef264 !important; border-bottom: 1px solid #ffffff !important; }
+        .pdf-dark-mode table td { color: #e2e8f0 !important; }
+        .pdf-dark-mode .border-white\/5, .pdf-dark-mode .border-white\/10 { border-color: #ffffff !important; }
+        .pdf-dark-mode svg { stroke: #ffffff !important; fill: none !important; }
+
+        /* --- MEJORAS DE MAQUETACIÓN PDF --- */
+        .pdf-export-mode .glass-card, 
+        .pdf-export-mode section, 
+        .pdf-export-mode table tr { 
+            page-break-inside: avoid !important; 
+            break-inside: avoid !important;
+        }
+        .pdf-export-mode section { margin-top: 0.25rem !important; }
+        .pdf-export-mode .gap-8 { gap: 1rem !important; }
+        .pdf-export-mode .p-8 { padding: 1rem !important; }
+        
+        /* Logo en PDF */
+        #pdf-coach-logo { max-height: 50px; width: auto; object-fit: contain; }
+        .pdf-export-mode #pdf-coach-logo { display: block !important; }
+        .pdf-export-mode .no-export { display: none !important; }
+
+        .pdf-export-mode .border-white\/5, .pdf-export-mode .border-white\/10 { border-color: #000000 !important; }
+        
+        .pdf-export-mode table th { background: #ffffff !important; color: #000000 !important; letter-spacing: normal !important; padding: 4px 8px !important; border-bottom: 1px solid #000000 !important; }
         .pdf-export-mode table td { padding: 8px !important; color: #0f172a !important; }
-        .pdf-export-mode .bg-slate-800.text-slate-300 { background: white !important; border: 0.5px solid #cbd5e1 !important; padding: 2px 6px !important; color: #0f172a !important; }
+        .pdf-export-mode .bg-slate-800.text-slate-300 { background: white !important; border: 1px solid #000000 !important; padding: 2px 6px !important; color: #0f172a !important; }
 
-        .pdf-export-mode .progress-ring { border: 1px solid #cbd5e1 !important; }
         .pdf-export-mode [data-lucide="flame"] { display: none !important; } /* Ocultar llama de fondo en PDF */
         
         /* Ocultar avatar y optimizar distribución */
         .pdf-export-mode header .relative:first-child { display: none !important; }
         .pdf-export-mode header { padding: 1rem !important; gap: 1rem !important; margin-bottom: 0.5rem !important; }
-        .pdf-export-mode header .text-3xl { font-size: 1.5rem !important; }
-        .pdf-export-mode header .flex-1 { text-align: left !important; }
+        .pdf-export-mode header .text-3xl { font-size: 1.5rem !important; text-align: left !important; }
+        .pdf-export-mode header .flex-1 { text-align: left !important; display: flex !important; flex-direction: column !important; align-items: flex-start !important; width: 100% !important; }
         .pdf-export-mode .text-4xl { font-size: 1.75rem !important; }
         .pdf-export-mode .p-8 { padding: 1rem !important; }
-        .pdf-export-mode section { margin-top: 1rem !important; gap: 1rem !important; }
+        .pdf-export-mode section { margin-top: 0.5rem !important; }
+        .pdf-export-mode #meal-list { margin-top: 0.25rem !important; }
+        .pdf-export-mode .lg\:grid-cols-12 { display: block !important; } /* Evitar gaps de grid en pdf */
+        .pdf-export-mode .lg\:col-span-5, .pdf-export-mode .lg\:col-span-7 { width: 100% !important; margin-bottom: 10px !important; }
 
         .pdf-export-mode .lg\:col-span-7 .glass-card {
             display: flex !important;
-            flex-direction: column !important;
+            flex-direction: row !important;
             align-items: center !important;
             text-align: center !important;
             justify-content: center !important;
@@ -124,10 +165,12 @@
             height: 14px !important;
             overflow: visible !important;
             stroke-width: 2px !important;
-            stroke: #1e293b !important;
-            display: block !important;
-            margin: 0 auto 2px !important;
+            stroke: #000000 !important;
+            display: inline-block !important;
+            vertical-align: middle !important;
         }
+        
+        .pdf-export-mode table { width: 100% !important; border-collapse: collapse !important; }
 
         .pdf-export-mode #pdf-date-header { display: block !important; }
 
@@ -270,9 +313,14 @@
         </div>
 
         <!-- Cabecera de fecha solo para PDF -->
-        <div id="pdf-date-header" class="hidden mb-6 p-6 bg-white border-b-4 border-lime-500 rounded-3xl">
-            <h1 class="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-1">PLAN NUTRICIONAL</h1>
-            <p class="text-slate-500 font-bold">Fecha: <span id="pdf-date-val" class="text-lime-600"></span></p>
+        <div id="pdf-date-header" class="hidden mb-6 p-6 bg-white border-b-4 border-lime-500 rounded-3xl relative">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-1">PLAN NUTRICIONAL</h1>
+                    <p class="text-slate-500 font-bold">Fecha: <span id="pdf-date-val" class="text-lime-600"></span></p>
+                </div>
+                <img id="pdf-coach-logo" src="" class="hidden" alt="Coach Logo">
+            </div>
         </div>
 
         <!-- 1. ENCABEZADO DEL PERFIL (ALUMNO) -->
@@ -300,7 +348,7 @@
                 </div>
                 
                 <div id="header-coach-info" class="hidden">
-                    <p class="text-slate-400 font-medium flex items-center justify-center lg:justify-start gap-2 mt-1">
+                    <p class="text-slate-400 font-medium flex items-center justify-center lg:justify-start gap-2 mt-1 no-export">
                         <i data-lucide="shield-check" class="w-4 h-4 text-lime-400"></i> Entrenador: <span id="display-coach-name" class="font-bold text-slate-200">...</span>
                     </p>
                 </div>
@@ -898,12 +946,57 @@
                         <option value="user">Uso Personal</option>
                     </select>
                 </div>
+                <div class="pt-2">
+                    <button type="button" onclick="openModal('modal-pdf-settings')" class="w-full bg-white/5 border border-white/10 text-slate-300 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-xs hover:bg-white/10 transition-all">
+                        <i data-lucide="file-text" class="w-4 h-4"></i> Ajustes del PDF
+                    </button>
+                </div>
                 <div class="pt-4">
                     <button type="submit" class="w-full accent-gradient text-slate-950 font-bold py-4 rounded-2xl shadow-lg hover:scale-[1.01] transition-transform uppercase tracking-widest text-xs">
                         Guardar Cambios
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL: AJUSTES DEL PDF -->
+    <div id="modal-pdf-settings" onclick="closeModal('modal-pdf-settings')" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[110] hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-[2.5rem] p-8 border border-white/10 shadow-2xl" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="text-2xl font-black italic text-lime-400 flex items-center gap-3">
+                    <i data-lucide="file-text"></i> Personalizar PDF
+                </h3>
+                <button onclick="closeModal('modal-pdf-settings')" class="p-2 hover:bg-white/5 rounded-full transition-colors text-slate-500">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-6">
+                <div class="space-y-3">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 px-2">Tema de Exportación</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="setPdfTheme('light')" id="theme-btn-light" class="p-4 rounded-2xl border-2 border-lime-400 bg-white text-slate-900 font-bold text-sm">Modo Claro</button>
+                        <button onclick="setPdfTheme('dark')" id="theme-btn-dark" class="p-4 rounded-2xl border-2 border-slate-800 bg-slate-900 text-white font-bold text-sm">Modo Oscuro</button>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 px-2">Logo del Entrenador</label>
+                    <input type="file" id="coach-logo-input" accept="image/*" class="hidden" onchange="handleLogoUpload(this)">
+                    <button onclick="document.getElementById('coach-logo-input').click()" class="w-full py-8 border-2 border-dashed border-white/10 rounded-3xl flex flex-col items-center gap-2 hover:bg-white/5 transition-all group">
+                        <img id="logo-preview" src="" class="h-12 w-auto hidden object-contain mb-2">
+                        <i data-lucide="upload-cloud" class="w-8 h-8 text-slate-500 group-hover:text-lime-400"></i>
+                        <span class="text-xs font-bold text-slate-400">Subir Logo (PNG/JPG)</span>
+                    </button>
+                    <div id="logo-action-buttons" class="hidden flex gap-2">
+                        <button onclick="deleteCoachLogo()" class="flex-1 py-2 bg-rose-500/10 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all">
+                            Eliminar Logo
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-slate-600 italic px-2">El logo se ajustará automáticamente a un tamaño óptimo.</p>
+                </div>
+                <button onclick="closeModal('modal-pdf-settings')" class="w-full accent-gradient text-slate-950 font-bold py-4 rounded-2xl shadow-lg mt-4">Listo</button>
+            </div>
         </div>
     </div>
 
@@ -977,11 +1070,101 @@
         let editingSupplementId = null;
         let editingNoteId = null;
         let isSignUp = false;
+
+        // Configuración de PDF persistente
+        let coachPdfSettings = {
+            theme: 'light',
+            logoUrl: ''
+        };
+
+        function setPdfTheme(theme) {
+            coachPdfSettings.theme = theme;
+            document.getElementById('theme-btn-light').className = theme === 'light' ? 'p-4 rounded-2xl border-2 border-lime-400 bg-white text-slate-900 font-bold text-sm' : 'p-4 rounded-2xl border-2 border-slate-800 bg-slate-100 text-slate-400 font-bold text-sm opacity-50';
+            document.getElementById('theme-btn-dark').className = theme === 'dark' ? 'p-4 rounded-2xl border-2 border-lime-400 bg-slate-900 text-white font-bold text-sm' : 'p-4 rounded-2xl border-2 border-slate-800 bg-slate-900 text-slate-500 font-bold text-sm opacity-50';
+            saveCoachPreferences();
+        }
+
+        function handleLogoUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) return alert("El archivo es demasiado grande (máx 2MB)");
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 150;
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    const resizedBase64 = canvas.toDataURL('image/webp', 0.8);
+                    coachPdfSettings.logoUrl = resizedBase64;
+                    updateLogoUIPref(resizedBase64);
+                    saveCoachPreferences();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateLogoUIPref(url) {
+            const preview = document.getElementById('logo-preview');
+            const pdfLogo = document.getElementById('pdf-coach-logo');
+            const actionBtns = document.getElementById('logo-action-buttons');
+
+            if (url) {
+                preview.src = url; preview.classList.remove('hidden');
+                pdfLogo.src = url;
+                actionBtns.classList.remove('hidden');
+            } else {
+                preview.src = ""; preview.classList.add('hidden');
+                pdfLogo.src = "";
+                actionBtns.classList.add('hidden');
+            }
+        }
+
+        async function deleteCoachLogo() {
+            if (!confirm("¿Seguro que quieres eliminar el logo?")) return;
+            coachPdfSettings.logoUrl = '';
+            updateLogoUIPref('');
+            await saveCoachPreferences();
+        }
+
+        async function saveCoachPreferences() {
+            const { data: userData } = await _supabase.auth.getUser();
+            if (!userData?.user) return;
+            
+            // Buscamos el perfil del coach para guardar sus preferencias
+            await _supabase.from('profiles')
+                .update({ 
+                    pdf_theme: coachPdfSettings.theme,
+                    logo_url: coachPdfSettings.logoUrl 
+                })
+                .eq('coach_id', userData.user.id)
+                .eq('role', 'admin'); // O 'coach' según tu lógica
+        }
         
         // --- SISTEMA DE ADMINISTRACIÓN ---
         async function checkAdminStatus() {
             const { data: authData } = await _supabase.auth.getUser();
             if (!authData?.user) return;
+
+            // Cargar preferencias del coach
+            const { data: coachProfile } = await _supabase
+                .from('profiles')
+                .select('pdf_theme, logo_url')
+                .eq('coach_id', authData.user.id)
+                .maybeSingle(); // Usamos maybeSingle para evitar errores si no existe aún
+            if (coachProfile) {
+                coachPdfSettings.theme = coachProfile.pdf_theme || 'light';
+                coachPdfSettings.logoUrl = coachProfile.logo_url || '';
+                setPdfTheme(coachPdfSettings.theme);
+                updateLogoUIPref(coachPdfSettings.logoUrl);
+            }
 
             // Comprobamos si el perfil asociado al coach actual tiene rol 'admin'
             const { data, error } = await _supabase
@@ -1007,7 +1190,7 @@
             const { data, error } = await _supabase
                 .from('profiles')
                 .select('*')
-                .in('role', ['admin', 'user']) 
+                .in('role', ['admin', 'user', 'coach']) 
                 .order('full_name', { ascending: true });
 
             if (error) {
@@ -1738,7 +1921,7 @@
             // Bloqueamos si el perfil es inactivo Y el usuario es 'user' (uso personal) 
             // O si es un coach viendo su propio perfil inicial (el nombre coincide)
             const isInactive = currentStudent && (currentStudent.activo === false || currentStudent.activo === null);
-            const isOwner = user && (user.user_metadata.role === 'user' || currentStudent?.full_name === user.user_metadata.full_name);
+            const isOwner = user && user.user_metadata.role === 'user' && currentStudent?.full_name === user.user_metadata.full_name;
             
             const shouldBlock = isInactive && isOwner;
 
@@ -2234,6 +2417,7 @@
                 height: parseFloat(document.getElementById('onboarding-height').value),
                 age: parseInt(document.getElementById('onboarding-age').value),
                 coach_id: user.id,
+                role: role,
                 avatar_seed: fullName
             };
             
@@ -2309,9 +2493,11 @@
                     backgroundColor: '#ffffff',
                     ignoreElements: (el) => el.classList.contains('no-export'),
                     onclone: (clonedDoc) => {
-                        // Aplicamos la clase al clon para que el PDF salga con estilo claro
-                        // pero el usuario nunca verá el cambio en su pantalla
-                        clonedDoc.body.classList.add('pdf-export-mode');
+                        const body = clonedDoc.body;
+                        if (coachPdfSettings.theme === 'dark') {
+                            body.classList.add('pdf-dark-mode');
+                        }
+                        body.classList.add('pdf-export-mode');
                     }
                 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
