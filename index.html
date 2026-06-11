@@ -2484,45 +2484,132 @@
         async function exportPlanToPDF() {
             if (!selectedStudentId) return alert("Selecciona un alumno primero");
             
-            const element = document.querySelector('main');
-            const studentName = currentStudent ? currentStudent.full_name.replace(/\s+/g, '_') : 'Alumno';
+            const name = currentStudent ? currentStudent.full_name : 'Alumno';
+            const studentNameFile = name.replace(/\s+/g, '_');
             const date = currentPlanDate;
+            const kcal = document.getElementById('current-calories').innerText;
+            const p = document.getElementById('current-p').innerText;
+            const c = document.getElementById('current-c').innerText;
+            const g = document.getElementById('current-g').innerText;
+            const f = document.getElementById('current-f').innerText;
+            const s = document.getElementById('current-s').innerText;
 
-            // Formatear fecha para el PDF
-            const dateObj = new Date(date + 'T12:00:00');
-            const formattedDate = dateObj.toLocaleDateString('es-ES', { 
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+            const isDark = coachPdfSettings.theme === 'dark';
+            const bgColor = isDark ? '#000000' : '#ffffff';
+            const textColor = isDark ? '#ffffff' : '#1e293b';
+            const secondaryTextColor = isDark ? '#94a3b8' : '#64748b';
+            const cardBg = isDark ? '#111827' : '#f8fafc';
+            const borderColor = isDark ? '#374151' : '#e2e8f0';
+            const coachName = document.getElementById('display-coach-name').innerText || 'Coach';
+
+            // Crear un contenedor temporal para el contenido del PDF
+            const pdfContainer = document.createElement('div');
+            pdfContainer.style.padding = '40px';
+            pdfContainer.style.color = textColor;
+            pdfContainer.style.fontFamily = "'Plus Jakarta Sans', Arial, sans-serif";
+            pdfContainer.style.backgroundColor = bgColor;
+
+            let html = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #bef264; padding-bottom: 20px; margin-bottom: 30px;">
+                    <div>
+                        <h1 style="font-size: 28px; font-weight: 800; color: ${isDark ? '#bef264' : '#020617'}; margin: 0; letter-spacing: -1px;">⭐ PLAN NUTRICIONAL</h1>
+                        <p style="font-size: 14px; color: ${secondaryTextColor}; margin-top: 5px;">PowerPlan PRO - Informe de Planificación</p>
+                        <p style="font-size: 12px; color: ${textColor}; margin-top: 5px;"><b>🏋️ Entrenador:</b> ${coachName}</p>
+                    </div>
+                    ${coachPdfSettings.logoUrl ? `<img src="${coachPdfSettings.logoUrl}" style="max-width: 150px; max-height: 150px; object-fit: contain; border-radius: 10px;">` : ''}
+                </div>
+
+                <div style="margin-bottom: 30px;">
+                    <p style="margin: 5px 0; color: ${textColor};"><b>👤 Cliente:</b> ${name}</p>
+                    <p style="margin: 5px 0;"><b>📅 Fecha:</b> ${date}</p>
+                    <p style="margin: 5px 0;"><b>🎯 Objetivo:</b> ${currentStudent.objective || 'Mantenimiento'}</p>
+                </div>
+
+                <div style="background: ${cardBg}; padding: 20px; border-radius: 15px; margin-bottom: 30px; border: 1px solid ${borderColor};">
+                    <h2 style="font-size: 18px; font-weight: 800; margin-top: 0; color: ${isDark ? '#bef264' : '#020617'};">📊 RESUMEN DIARIO</h2>
+                    <p style="font-size: 20px; margin: 10px 0;">🔥 Calorías Totales: <b>${kcal} kcal</b></p>
+                    <p style="font-size: 14px; color: ${isDark ? '#cbd5e1' : '#475569'};">
+                        <b>P:</b> ${p} | <b>C:</b> ${c} | <b>G:</b> ${g} | <b>Fibra:</b> ${f} | <b>Azúcar:</b> ${s}
+                    </p>
+                </div>
+
+                <h2 style="font-size: 18px; font-weight: 800; border-left: 4px solid #bef264; padding-left: 15px; margin-bottom: 20px; color: ${isDark ? '#bef264' : '#020617'};">🍴 MENÚ DETALLADO</h2>
+            `;
+
+            // Obtener las comidas
+            const mealCards = document.querySelectorAll('#meal-list > div.glass-card');
+            mealCards.forEach(card => {
+                const title = card.querySelector('h4')?.innerText || 'Comida';
+                const time = card.querySelector('input[type="time"]')?.value || '--:--';
+                
+                html += `
+                    <div style="margin-bottom: 25px; page-break-inside: avoid;">
+                        <h3 style="font-size: 14px; font-weight: 800; text-transform: uppercase; color: #65a30d; margin-bottom: 10px;">
+                            ${title} <span style="color: #94a3b8; font-weight: 400;">(${time})</span>
+                        </h3>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                `;
+
+                const rows = card.querySelectorAll('tbody tr');
+                rows.forEach(row => {
+                    const food = row.cells[0]?.innerText;
+                    let qty = row.cells[1]?.innerText || '';
+                    // Normalizar cantidades: Si es un número sin unidad, añadir 'g'
+                    if (qty && !isNaN(qty)) qty += 'g';
+                    
+                    const macros = row.cells[3]?.innerText;
+                    const cals = row.cells[4]?.innerText;
+                    html += `
+                        <tr style="border-bottom: 1px solid ${isDark ? '#1e293b' : '#f1f5f9'};">
+                            <td style="padding: 8px 0; font-weight: 600; color: ${textColor};">• ${food}</td>
+                            <td style="padding: 8px 0; color: ${secondaryTextColor}; text-align: center;">${qty}</td>
+                            <td style="padding: 8px 0; color: ${isDark ? '#64748b' : '#94a3b8'}; text-align: right; font-size: 11px;">${macros} | ${cals}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `</table></div>`;
             });
-            document.getElementById('pdf-date-val').innerText = formattedDate;
 
-            // Configuración del PDF
+            // Suplementación
+            const suppItems = document.querySelectorAll('#supplement-list > div.bg-white\\/5');
+            if (suppItems.length > 0) {
+                html += `<h2 style="font-size: 18px; font-weight: 800; border-left: 4px solid #bef264; padding-left: 15px; margin: 30px 0 15px 0; color: ${isDark ? '#bef264' : '#020617'};">💊 SUPLEMENTACIÓN</h2>`;
+                suppItems.forEach(s => {
+                    const sName = s.querySelector('span.font-semibold')?.innerText;
+                    const sDose = s.querySelector('span.bg-lime-400\\/10')?.innerText;
+                    html += `<p style="font-size: 13px; margin: 5px 0; color: ${textColor};"><b>▫️ ${sName}:</b> ${sDose}</p>`;
+                });
+            }
+
+            // Notas
+            const noteItems = document.querySelectorAll('#notes-container p');
+            if (noteItems.length > 0 && !noteItems[0].innerText.includes('Sin notas')) {
+                html += `<h2 style="font-size: 18px; font-weight: 800; border-left: 4px solid #64748b; padding-left: 15px; margin: 30px 0 15px 0; color: ${isDark ? '#cbd5e1' : '#020617'};">📝 NOTAS ADICIONALES</h2>`;
+                noteItems.forEach(n => {
+                    html += `<p style="font-size: 13px; color: ${isDark ? '#94a3b8' : '#475569'}; font-style: italic; background: ${isDark ? '#0f172a' : '#f1f5f9'}; padding: 10px; border-radius: 8px; margin-bottom: 5px; border: 1px solid ${isDark ? '#1e293b' : 'transparent'};">${n.innerText}</p>`;
+                });
+            }
+
+            pdfContainer.innerHTML = html;
+
+            // Configuración del PDF (Optimizado para texto)
             const opt = {
-                margin: [15, 10, 15, 10],
-                filename: `Plan_${studentName}_${date}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
+                margin: 10,
+                filename: `Plan_${studentNameFile}_${date}.pdf`,
+                image: { type: 'jpeg', quality: 1 },
                 html2canvas: { 
                     scale: 2, 
                     useCORS: true, 
-                    letterRendering: true,
-                    backgroundColor: '#ffffff',
-                    ignoreElements: (el) => el.classList.contains('no-export'),
-                    onclone: (clonedDoc) => {
-                        const body = clonedDoc.body;
-                        if (coachPdfSettings.theme === 'dark') {
-                            body.classList.add('pdf-dark-mode');
-                        }
-                        body.classList.add('pdf-export-mode');
-                    }
+                    backgroundColor: bgColor
                 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                pagebreak: { mode: 'avoid-all' }
             };
 
             try {
-                await html2pdf().set(opt).from(element).save();
-            } catch (err) {
-                console.error("Error PDF:", err);
-            }
+                await html2pdf().set(opt).from(pdfContainer).save();
+            } catch (err) { console.error("Error PDF:", err); }
         }
 
         function toggleExportMenu() {
@@ -2607,6 +2694,23 @@
                     ignoreElements: (el) => el.classList.contains('no-export')
                 });
                 
+                // Detección de iPhone/iOS para manejo especial
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+                if (isIOS) {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    // En iOS Safari, las descargas automáticas y el share de archivos suelen fallar tras procesos async.
+                    // Abrimos la imagen en una pestaña nueva para que el usuario la guarde/comparta manualmente.
+                    const newWindow = window.open();
+                    if (newWindow) {
+                        newWindow.document.write(`<body style="margin:0;background:#020617;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="${dataUrl}" style="max-width:100%;height:auto;box-shadow:0 0 20px rgba(0,0,0,0.5);"><p style="position:fixed;top:10px;color:white;font-family:sans-serif;font-size:12px;background:rgba(0,0,0,0.5);padding:8px 15px;border-radius:10px;">Mantén presionado para Guardar o Compartir</p></body>`);
+                    } else {
+                        alert("Por favor, permite las ventanas emergentes para ver la imagen.");
+                    }
+                    return;
+                }
+
                 canvas.toBlob(async (blob) => {
                     const file = new File([blob], `Plan_${currentStudent.full_name}.png`, { type: 'image/png' });
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
