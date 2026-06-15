@@ -1931,13 +1931,12 @@
             const user = authData?.user;
             const target = selectedStudentCalories || plan.target_calories || 0;
             
-            // Lógica de Bloqueo:
-            // Bloqueamos si el perfil es inactivo Y el usuario es 'user' (uso personal) 
-            // O si es un coach viendo su propio perfil inicial (el nombre coincide)
-            const isInactive = currentStudent && (currentStudent.activo === false || currentStudent.activo === null);
-            const isOwner = user && user.user_metadata.role === 'user' && currentStudent?.full_name === user.user_metadata.full_name;
-            
-            const shouldBlock = isInactive && isOwner;
+            // Lógica de Bloqueo de Cuenta (Panel Master):
+            // Verificamos si la cuenta del usuario logueado (admin, coach o user) está activa.
+            // Buscamos su perfil principal en la lista (el que no tiene rol 'alumno').
+            const myProfile = allStudents.find(s => s.role !== 'alumno');
+            const isAccountInactive = myProfile && myProfile.role !== 'admin' && (myProfile.activo === false || myProfile.activo === null);
+            const shouldBlock = isAccountInactive;
 
             const mealListContainer = document.getElementById('meal-list');
             const activationBlock = document.getElementById('activation-block');
@@ -2410,6 +2409,10 @@
             const fullName = document.getElementById('onboarding-name').value;
             const role = document.getElementById('onboarding-role').value;
             
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Procesando...';
+
             // 1. Actualizar metadata del usuario auth
             const { error: authError } = await _supabase.auth.updateUser({
                 data: { 
@@ -2419,7 +2422,12 @@
                 }
             });
 
-            if (authError) return alert(authError.message);
+            if (authError) {
+                alert(authError.message);
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Finalizar y Crear mi Perfil';
+                return;
+            }
 
             // 2. Crear primer perfil automáticamente con los datos ingresados
             const studentData = {
@@ -2439,13 +2447,35 @@
             const kcal = (10 * studentData.current_weight) + (6.25 * studentData.height) - (5 * studentData.age) + 5;
             studentData.target_calories = Math.round(kcal * 1.55);
 
-            const { data: profileData, error: profileError } = await _supabase.from('profiles').insert([studentData]).select();
+            // Verificar si ya existe un perfil para este coach_id para evitar duplicados
+            const { data: existing } = await _supabase
+                .from('profiles')
+                .select('id')
+                .eq('coach_id', user.id)
+                .eq('role', role)
+                .maybeSingle();
+
+            let result;
+            if (existing) {
+                // Si ya existe por algún motivo (reintento), actualizamos
+                result = await _supabase.from('profiles').update(studentData).eq('id', existing.id).select();
+            } else {
+                // Si no existe, insertamos
+                result = await _supabase.from('profiles').insert([studentData]).select();
+            }
+
+            const { data: profileData, error: profileError } = result;
 
             if (profileError) {
                 console.error("Error al crear perfil inicial:", profileError);
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Finalizar y Crear mi Perfil';
             } else {
-                    // Actualizamos la lista local inmediatamente para que selectStudent lo encuentre
-                    allStudents.push(profileData[0]);
+                // Actualizamos la lista local inmediatamente
+                const idx = allStudents.findIndex(s => s.id === profileData[0].id);
+                if (idx !== -1) allStudents[idx] = profileData[0];
+                else allStudents.push(profileData[0]);
+
                 document.getElementById('modal-onboarding').classList.add('hidden');
                 document.getElementById('main-sidebar').classList.remove('hidden');
                 document.getElementById('main-content').classList.remove('hidden');
