@@ -478,7 +478,7 @@
                     <button onclick="openModal('modal-add-food')" class="bg-lime-400 text-slate-950 px-4 py-2 rounded-xl hover:scale-105 transition-all font-bold text-xs flex items-center gap-2 no-export" title="Añadir alimento a una comida">
                         <i data-lucide="plus-circle" class="w-4 h-4"></i> Nueva Comida
                     </button>
-                    <button onclick="openLibraryModalForNew()" class="bg-slate-800 text-lime-400 border border-lime-400/20 px-4 py-2 rounded-xl hover:bg-slate-700 transition-all font-bold text-xs flex items-center gap-2 no-export" title="Añadir nuevo alimento a la base de datos">
+                    <button id="btn-add-to-library" onclick="openLibraryModalForNew()" class="hidden bg-slate-800 text-lime-400 border border-lime-400/20 px-4 py-2 rounded-xl hover:bg-slate-700 transition-all font-bold text-xs flex items-center gap-2 no-export" title="Añadir nuevo alimento a la base de datos">
                         <i data-lucide="database" class="w-4 h-4"></i> Añadir Alimento
                     </button>
                 </div>
@@ -1084,6 +1084,7 @@
         let editingSupplementId = null;
         let editingNoteId = null;
         let isSignUp = false;
+        let isAdmin = false;
 
         // Configuración de PDF persistente
         let coachPdfSettings = {
@@ -1189,9 +1190,12 @@
                 .limit(1);
 
             if (data && data.length > 0) {
+                isAdmin = true;
                 document.getElementById('admin-section').classList.remove('hidden');
+                const btnLib = document.getElementById('btn-add-to-library');
+                if (btnLib) btnLib.classList.remove('hidden');
                 lucide.createIcons();
-            }
+            } else { isAdmin = false; }
         }
 
         async function openAdminPanel() {
@@ -1204,7 +1208,7 @@
             const { data, error } = await _supabase
                 .from('profiles')
                 .select('*')
-                .in('role', ['admin', 'user', 'coach']) 
+                .neq('role', 'alumno') 
                 .order('full_name', { ascending: true });
 
             if (error) {
@@ -1223,8 +1227,8 @@
                         </div>
                     </td>
                     <td class="px-6 py-5">
-                        <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${user.role === 'admin' ? 'bg-lime-400/10 text-lime-400 border border-lime-400/20' : 'bg-slate-800 text-slate-500 border border-white/5'}">
-                            ${user.role || 'user'}
+                        <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${user.role === 'admin' ? 'bg-lime-400/10 text-lime-400 border border-lime-400/20' : (user.role === 'coach' ? 'bg-blue-400/10 text-blue-400 border border-blue-400/20' : 'bg-slate-800 text-slate-300 border border-white/5')}">
+                            ${user.role === 'user' ? 'Uso Personal' : (user.role === 'coach' ? 'Entrenador' : (user.role || 'user'))}
                         </span>
                     </td>
                     <td class="px-6 py-5">
@@ -1713,6 +1717,7 @@
                                         <span class="text-slate-400 font-bold">${cal} kcal</span>
                                     </div>
                                 </div>
+                                ${isAdmin ? `
                                 <div class="flex gap-1 ml-4 no-export">
                                     <button onclick='event.stopPropagation(); editFoodLibraryItem(${JSON.stringify(food).replace(/'/g, "&apos;")})' class="p-1.5 hover:bg-lime-400/20 text-slate-500 hover:text-lime-400 rounded-lg transition-colors" title="Editar de la DB">
                                         <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
@@ -1720,7 +1725,7 @@
                                     <button onclick="event.stopPropagation(); deleteFoodLibraryItem('${foodId}', '${name.replace(/'/g, "\\'")}')" class="p-1.5 hover:bg-rose-500/20 text-slate-500 hover:text-rose-500 rounded-lg transition-colors" title="Borrar de la DB">
                                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                     </button>
-                                </div>
+                                </div>` : ''}
                             </div>
                         `;
                     }).join('');
@@ -1950,7 +1955,15 @@
             // Reseteamos visibilidad por defecto
             activationBlock.classList.add('hidden');
             mealListContainer.classList.remove('hidden');
-            if (planActions) planActions.querySelectorAll('button').forEach(btn => btn.classList.remove('hidden'));
+            if (planActions) {
+                planActions.querySelectorAll('button').forEach(btn => {
+                    if (btn.id === 'btn-add-to-library') {
+                        btn.classList.toggle('hidden', !isAdmin);
+                    } else {
+                        btn.classList.remove('hidden');
+                    }
+                });
+            }
             if (btnNewStudent) btnNewStudent.classList.remove('hidden');
             if (btnAddSupplement) btnAddSupplement.classList.remove('hidden');
             if (btnAddNote) btnAddNote.classList.remove('hidden');
@@ -2259,6 +2272,8 @@
         // Envío de Formulario para añadir a la Biblioteca Global
         async function saveFoodToLibrary(e) {
             e.preventDefault();
+            if (!isAdmin) return alert("Permiso denegado. Solo administradores pueden modificar la biblioteca.");
+
             const { data: userData } = await _supabase.auth.getUser();
             if (!userData?.user) return alert("Sesión no válida");
 
@@ -2339,6 +2354,8 @@
         }
 
         async function deleteFoodLibraryItem(id, name) {
+            if (!isAdmin) return alert("Permiso denegado. Acción solo para administradores.");
+
             if (confirm(`¿Estás seguro de que deseas eliminar permanentemente "${name}" de la biblioteca?`)) {
                 const { error } = await _supabase.from('biblioteca_alimentos').delete().eq('id', id);
                 if (error) {
@@ -2433,7 +2450,7 @@
             const studentData = {
                 full_name: fullName,
                 objective: 'Mantener el peso actual',
-                gender: 'Hombre',
+                gender: 'Hombre', // Valores por defecto para el perfil inicial
                 activity_level: 'Moderado',
                 current_weight: parseFloat(document.getElementById('onboarding-weight').value),
                 height: parseFloat(document.getElementById('onboarding-height').value),
