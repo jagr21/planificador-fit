@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -40,72 +41,113 @@
             margin: 0 !important;
         }
         .pdf-export-mode #pdf-date-header { 
-            display: block !important; 
+            display: flex !important; 
             padding: 15px 20px !important;
-            margin-bottom: 10px !important;
+            margin-bottom: 5px !important;
             border-radius: 0 !important;
+            border-bottom: 2px solid #000000 !important;
+            background: white !important;
         }
         .pdf-export-mode .glass-card {
             background: white !important;
-            border: 0.5px solid #cbd5e1 !important;
+            border: 1px solid #000000 !important;
             box-shadow: none !important;
-            color: #1e293b !important;
+            color: #000000 !important;
             backdrop-filter: none !important;
+            margin-bottom: 10px !important;
         }
+        /* Forzar fondo blanco en secciones específicas */
+        .pdf-export-mode section, 
+        .pdf-export-mode .lg\:col-span-5, 
+        .pdf-export-mode .lg\:col-span-7 { background: white !important; }
+
         .pdf-export-mode .text-slate-100,
         .pdf-export-mode .text-slate-200,
-        .pdf-export-mode .text-slate-300 { color: #0f172a !important; }
-        .pdf-export-mode .text-slate-400,
-        .pdf-export-mode .text-slate-500 { color: #334155 !important; }
+        .pdf-export-mode .text-slate-300 { color: #000000 !important; }
+        .pdf-export-mode .text-slate-400, .pdf-export-mode .text-slate-500 { color: #000000 !important; }
         .pdf-export-mode .text-white { color: #0f172a !important; }
         
-        /* Colores de acento optimizados para fondo blanco (más oscuros para contraste) */
         .pdf-export-mode .text-lime-400 { color: #365314 !important; } 
         .pdf-export-mode .text-blue-400 { color: #1e3a8a !important; } 
-        .pdf-export-mode .text-amber-500 { color: #78350f !important; } 
+        .pdf-export-mode .text-amber-400, .pdf-export-mode .text-amber-500 { color: #78350f !important; } 
         .pdf-export-mode .text-rose-400, .pdf-export-mode .text-rose-500 { color: #881337 !important; } 
         
-        /* Eliminación de fondos oscuros/grises y forzado a blanco puro */
         .pdf-export-mode .bg-slate-900, 
-        .pdf-export-mode .bg-slate-800,
-        .pdf-export-mode .bg-slate-800\/50,
-        .pdf-export-mode .bg-white\/5,
-        .pdf-export-mode .bg-white\/\[0\.02\],
-        .pdf-export-mode .bg-white\/\[0\.03\],
-        .pdf-export-mode tr,
+        .pdf-export-mode .bg-slate-800, 
+        .pdf-export-mode .bg-white\/5, 
         .pdf-export-mode .bg-\[\#020617\],
-        .pdf-export-mode .accent-gradient { 
+        .pdf-export-mode tr { 
             background: white !important; 
-            border: 0.5px solid #cbd5e1 !important;
+            border: 1px solid #000000 !important;
         }
         
-        /* Corregir barra de progreso en el PDF */
-        .pdf-export-mode #calorie-progress-bar { 
-            background: #65a30d !important; 
-            border: none !important;
+        .pdf-export-mode .accent-gradient,
+        .pdf-export-mode #calorie-progress-bar {
+            background: #bef264 !important;
+            border: 1px solid #000000 !important;
+            color: #000000 !important;
         }
 
-        .pdf-export-mode .border-white\/5, .pdf-export-mode .border-white\/10 { border-color: #cbd5e1 !important; }
+        /* --- MODO OSCURO PDF --- */
+        .pdf-dark-mode, .pdf-dark-mode main { background: #000000 !important; color: #ffffff !important; }
+        .pdf-dark-mode .glass-card { background: #000000 !important; border: 1px solid #ffffff !important; color: white !important; }
+        .pdf-dark-mode section, 
+        .pdf-dark-mode .lg\:col-span-5, 
+        .pdf-dark-mode .lg\:col-span-7 { background: #000000 !important; }
         
-        .pdf-export-mode table th { background: #f8fafc !important; color: #0f172a !important; letter-spacing: normal !important; padding: 4px 8px !important; }
+        .pdf-dark-mode .text-slate-400, .pdf-dark-mode .text-slate-500 { color: #ffffff !important; }
+        .pdf-dark-mode .text-white { color: white !important; }
+        .pdf-dark-mode .text-lime-400 { color: #bef264 !important; }
+        
+        .pdf-dark-mode .bg-slate-900, .pdf-dark-mode .bg-slate-800, .pdf-dark-mode .bg-white\/5, .pdf-dark-mode tr { 
+            background: #000000 !important; border-color: #ffffff !important; 
+        }
+        .pdf-dark-mode #pdf-date-header { background: #000000 !important; border-bottom: 2px solid #ffffff !important; }
+        .pdf-dark-mode #pdf-date-header h1 { color: white !important; }
+        .pdf-dark-mode table th { background: #000000 !important; color: #bef264 !important; border-bottom: 1px solid #ffffff !important; }
+        .pdf-dark-mode table td { color: #e2e8f0 !important; }
+        .pdf-dark-mode .border-white\/5, .pdf-dark-mode .border-white\/10 { border-color: #ffffff !important; }
+        .pdf-dark-mode svg { stroke: #ffffff !important; fill: none !important; }
+
+        /* --- MEJORAS DE MAQUETACIÓN PDF --- */
+        .pdf-export-mode .glass-card, 
+        .pdf-export-mode section, 
+        .pdf-export-mode table tr { 
+            page-break-inside: avoid !important; 
+            break-inside: avoid !important;
+        }
+        .pdf-export-mode section { margin-top: 0.25rem !important; }
+        .pdf-export-mode .gap-8 { gap: 1rem !important; }
+        .pdf-export-mode .p-8 { padding: 1rem !important; }
+        
+        /* Logo en PDF */
+        #pdf-coach-logo { max-height: 50px; width: auto; object-fit: contain; }
+        .pdf-export-mode #pdf-coach-logo { display: block !important; }
+        .pdf-export-mode .no-export { display: none !important; }
+
+        .pdf-export-mode .border-white\/5, .pdf-export-mode .border-white\/10 { border-color: #000000 !important; }
+        
+        .pdf-export-mode table th { background: #ffffff !important; color: #000000 !important; letter-spacing: normal !important; padding: 4px 8px !important; border-bottom: 1px solid #000000 !important; }
         .pdf-export-mode table td { padding: 8px !important; color: #0f172a !important; }
-        .pdf-export-mode .bg-slate-800.text-slate-300 { background: white !important; border: 0.5px solid #cbd5e1 !important; padding: 2px 6px !important; color: #0f172a !important; }
+        .pdf-export-mode .bg-slate-800.text-slate-300 { background: white !important; border: 1px solid #000000 !important; padding: 2px 6px !important; color: #0f172a !important; }
 
-        .pdf-export-mode .progress-ring { border: 1px solid #cbd5e1 !important; }
         .pdf-export-mode [data-lucide="flame"] { display: none !important; } /* Ocultar llama de fondo en PDF */
         
         /* Ocultar avatar y optimizar distribución */
         .pdf-export-mode header .relative:first-child { display: none !important; }
         .pdf-export-mode header { padding: 1rem !important; gap: 1rem !important; margin-bottom: 0.5rem !important; }
-        .pdf-export-mode header .text-3xl { font-size: 1.5rem !important; }
-        .pdf-export-mode header .flex-1 { text-align: left !important; }
+        .pdf-export-mode header .text-3xl { font-size: 1.5rem !important; text-align: left !important; }
+        .pdf-export-mode header .flex-1 { text-align: left !important; display: flex !important; flex-direction: column !important; align-items: flex-start !important; width: 100% !important; }
         .pdf-export-mode .text-4xl { font-size: 1.75rem !important; }
         .pdf-export-mode .p-8 { padding: 1rem !important; }
-        .pdf-export-mode section { margin-top: 1rem !important; gap: 1rem !important; }
+        .pdf-export-mode section { margin-top: 0.5rem !important; }
+        .pdf-export-mode #meal-list { margin-top: 0.25rem !important; }
+        .pdf-export-mode .lg\:grid-cols-12 { display: block !important; } /* Evitar gaps de grid en pdf */
+        .pdf-export-mode .lg\:col-span-5, .pdf-export-mode .lg\:col-span-7 { width: 100% !important; margin-bottom: 10px !important; }
 
         .pdf-export-mode .lg\:col-span-7 .glass-card {
             display: flex !important;
-            flex-direction: column !important;
+            flex-direction: row !important;
             align-items: center !important;
             text-align: center !important;
             justify-content: center !important;
@@ -124,10 +166,12 @@
             height: 14px !important;
             overflow: visible !important;
             stroke-width: 2px !important;
-            stroke: #1e293b !important;
-            display: block !important;
-            margin: 0 auto 2px !important;
+            stroke: #000000 !important;
+            display: inline-block !important;
+            vertical-align: middle !important;
         }
+        
+        .pdf-export-mode table { width: 100% !important; border-collapse: collapse !important; }
 
         .pdf-export-mode #pdf-date-header { display: block !important; }
 
@@ -183,7 +227,10 @@
                     <input type="email" id="auth-email" required class="w-full bg-slate-900/50 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-sm" placeholder="coach@powerplan.com">
                 </div>
                 <div class="space-y-2">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 px-2">Contraseña</label>
+                    <div class="flex justify-between items-center px-2">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500">Contraseña</label>
+                        <button type="button" onclick="handleForgotPassword()" class="text-[10px] font-bold text-lime-400 hover:underline">¿Olvidó su contraseña?</button>
+                    </div>
                     <input type="password" id="auth-password" required class="w-full bg-slate-900/50 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-sm" placeholder="••••••••">
                 </div>
                 <button type="submit" id="auth-submit" class="w-full accent-gradient text-slate-950 font-extrabold py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-transform mt-4">
@@ -248,18 +295,52 @@
         
         <!-- Navegación Superior -->
         <div class="flex justify-between items-center mb-4">
-            <div class="flex items-center gap-4">
+            <div class="flex flex-wrap items-center gap-4">
                 <div class="flex items-center gap-2 text-slate-400 text-sm no-export">
                     <i data-lucide="home" class="w-4 h-4"></i>
                     <span>/</span>
                     <span class="text-slate-200 font-medium">Planificación</span>
                 </div>
-                <input type="date" id="plan-date-selector" onchange="changePlanDate(this.value)" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-lime-400 focus:outline-none focus:border-lime-400/50 transition-all no-export">
+                <!-- Selector de Modo -->
+                <div class="flex bg-slate-900/80 border border-white/10 rounded-xl p-0.5 no-export" id="mode-switcher-container">
+                    <button type="button" onclick="setDashboardMode('rutina')" id="btn-mode-rutina" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white">
+                        Modo Rutina
+                    </button>
+                    <button type="button" onclick="setDashboardMode('calendario')" id="btn-mode-calendario" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white">
+                        Calendario
+                    </button>
+                </div>
+                <!-- Selector de Fecha (Modo Calendario) -->
+                <input type="date" id="plan-date-selector" onchange="changePlanDate(this.value)" class="hidden bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-lime-400 focus:outline-none focus:border-lime-400/50 transition-all no-export">
+                <!-- Selector de Día (Modo Rutina) -->
+                <div id="routine-day-selector-container" class="hidden flex items-center gap-2">
+                    <select id="routine-day-selector" onchange="changeRoutineDay(this.value)" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-lime-400 focus:outline-none focus:border-lime-400/50 transition-all no-export">
+                    </select>
+                    <button type="button" id="btn-delete-routine-day" onclick="deleteCurrentRoutineDay()" class="p-2 bg-slate-800/40 text-slate-600 rounded-xl border border-slate-700/30 cursor-not-allowed opacity-50 no-export" disabled title="No se puede eliminar el único día de la rutina">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button type="button" onclick="addNewRoutineDay()" class="bg-lime-400/10 hover:bg-lime-400/20 text-lime-400 border border-lime-400/20 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-all no-export">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Agregar Día
+                    </button>
+                </div>
             </div>
             <div class="flex gap-2">
-                <button onclick="exportPlanToPDF()" class="bg-lime-400 text-slate-950 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:scale-105 transition-all no-export">
-                    <i data-lucide="download" class="w-4 h-4"></i> Exportar PDF
-                </button>
+                <div class="relative no-export" id="export-btn-container">
+                    <button onclick="toggleExportMenu()" class="bg-lime-400 text-slate-950 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:scale-105 transition-all">
+                        <i data-lucide="share-2" class="w-4 h-4"></i> Exportar
+                    </button>
+                    <div id="export-menu" class="hidden absolute right-0 mt-2 w-52 rounded-2xl bg-slate-900 border border-white/10 shadow-2xl z-[160] overflow-hidden">
+                        <button onclick="exportPlanToPDF(); toggleExportMenu()" class="flex items-center gap-3 w-full px-4 py-3 text-[11px] font-bold text-slate-300 hover:bg-white/5 transition-colors border-b border-white/5">
+                            <i data-lucide="file-text" class="w-4 h-4 text-lime-400"></i> Documento PDF
+                        </button>
+                        <button onclick="exportToWhatsApp(); toggleExportMenu()" class="flex items-center gap-3 w-full px-4 py-3 text-[11px] font-bold text-slate-300 hover:bg-white/5 transition-colors border-b border-white/5">
+                            <i data-lucide="message-circle" class="w-4 h-4 text-emerald-400"></i> Texto para WhatsApp
+                        </button>
+                        <button onclick="exportToImage(); toggleExportMenu()" class="flex items-center gap-3 w-full px-4 py-3 text-[11px] font-bold text-slate-300 hover:bg-white/5 transition-colors">
+                            <i data-lucide="image" class="w-4 h-4 text-blue-400"></i> Captura de Imagen
+                        </button>
+                    </div>
+                </div>
                 <button onclick="openModal('modal-account-settings')" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors no-export">
                 <i data-lucide="settings" class="w-4 h-4 text-slate-400"></i> Ajustes
                 </button>
@@ -267,9 +348,14 @@
         </div>
 
         <!-- Cabecera de fecha solo para PDF -->
-        <div id="pdf-date-header" class="hidden mb-6 p-6 bg-white border-b-4 border-lime-500 rounded-3xl">
-            <h1 class="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-1">PLAN NUTRICIONAL</h1>
-            <p class="text-slate-500 font-bold">Fecha: <span id="pdf-date-val" class="text-lime-600"></span></p>
+        <div id="pdf-date-header" class="hidden mb-6 p-6 bg-white border-b-4 border-lime-500 rounded-3xl relative">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-1">PLAN NUTRICIONAL</h1>
+                    <p class="text-slate-500 font-bold">Fecha: <span id="pdf-date-val" class="text-lime-600"></span></p>
+                </div>
+                <img id="pdf-coach-logo" src="" class="hidden" alt="Coach Logo">
+            </div>
         </div>
 
         <!-- 1. ENCABEZADO DEL PERFIL (ALUMNO) -->
@@ -297,7 +383,7 @@
                 </div>
                 
                 <div id="header-coach-info" class="hidden">
-                    <p class="text-slate-400 font-medium flex items-center justify-center lg:justify-start gap-2 mt-1">
+                    <p class="text-slate-400 font-medium flex items-center justify-center lg:justify-start gap-2 mt-1 no-export">
                         <i data-lucide="shield-check" class="w-4 h-4 text-lime-400"></i> Entrenador: <span id="display-coach-name" class="font-bold text-slate-200">...</span>
                     </p>
                 </div>
@@ -392,12 +478,12 @@
                         <p id="target-f" class="text-[10px] text-emerald-400 font-bold">Meta: --g</p>
                     </div>
                 </div>
-                <!-- Water -->
-                <div class="glass-card rounded-3xl p-5 flex flex-col justify-between border-b-4 border-cyan-500/50 col-span-2 md:col-span-1">
-                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Agua</span>
+                <!-- Azúcar -->
+                <div class="glass-card rounded-3xl p-5 flex flex-col justify-between border-b-4 border-purple-500/50 col-span-2 md:col-span-1">
+                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Azúcar</span>
                     <div class="mt-2">
-                        <span id="current-w" class="text-2xl font-bold text-cyan-400">0L</span>
-                        <p id="target-w" class="text-[10px] text-cyan-400 font-bold">Meta: --L</p>
+                        <span id="current-s" class="text-2xl font-bold text-purple-400">0g</span>
+                        <p id="target-s" class="text-[10px] text-purple-400 font-bold">Meta: < 50g</p>
                     </div>
                 </div>
             </div>
@@ -413,7 +499,7 @@
                     <button onclick="openModal('modal-add-food')" class="bg-lime-400 text-slate-950 px-4 py-2 rounded-xl hover:scale-105 transition-all font-bold text-xs flex items-center gap-2 no-export" title="Añadir alimento a una comida">
                         <i data-lucide="plus-circle" class="w-4 h-4"></i> Nueva Comida
                     </button>
-                    <button onclick="openModal('modal-library-food')" class="bg-slate-800 text-lime-400 border border-lime-400/20 px-4 py-2 rounded-xl hover:bg-slate-700 transition-all font-bold text-xs flex items-center gap-2 no-export" title="Añadir nuevo alimento a la base de datos">
+                    <button id="btn-add-to-library" onclick="openLibraryModalForNew()" class="hidden bg-slate-800 text-lime-400 border border-lime-400/20 px-4 py-2 rounded-xl hover:bg-slate-700 transition-all font-bold text-xs flex items-center gap-2 no-export" title="Añadir nuevo alimento a la base de datos">
                         <i data-lucide="database" class="w-4 h-4"></i> Añadir Alimento
                     </button>
                 </div>
@@ -435,7 +521,7 @@
                         ¡Hola! Tu plan nutricional personalizado está a un solo paso. 
                             Para activar tu acceso completo y visualizar tus comidas, por favor contacta con nosotros.
                         </p>
-                        <a href="https://wa.me/tu-numero-aqui" target="_blank" class="inline-flex items-center gap-3 bg-lime-400 text-slate-950 px-8 py-4 rounded-2xl font-black hover:scale-105 transition-all shadow-xl shadow-lime-500/20 uppercase text-xs tracking-widest">
+                        <a href="https://wa.me/584129529216" target="_blank" class="inline-flex items-center gap-3 bg-lime-400 text-slate-950 px-8 py-4 rounded-2xl font-black hover:scale-105 transition-all shadow-xl shadow-lime-500/20 uppercase text-xs tracking-widest">
                             <i data-lucide="message-circle" class="w-5 h-5"></i>
                             Activar cuenta vía WhatsApp
                         </a>
@@ -493,7 +579,7 @@
             </div>
             <form id="food-form" class="space-y-4" autocomplete="off">
                 <input type="hidden" id="meal-id-input">
-                <div class="space-y-2">
+                <div class="space-y-2" id="food-date-container">
                     <label class="text-xs font-bold text-slate-500 uppercase px-2">Fecha del Plan</label>
                     <input type="date" id="food-date" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400/50 transition-all text-white">
                 </div>
@@ -545,6 +631,16 @@
                         <input type="number" step="0.1" id="food-g" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-rose-400 transition-all">
                     </div>
                 </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Fibra (g)</label>
+                        <input type="number" step="0.1" id="food-f" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-emerald-400 transition-all">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Azúcar (g)</label>
+                        <input type="number" step="0.1" id="food-s" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-purple-400 transition-all">
+                    </div>
+                </div>
                 <div class="flex gap-3 mt-6">
                     <button type="button" id="btn-delete-food" onclick="deleteFoodItem()" class="hidden flex-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 font-bold py-4 rounded-2xl border border-rose-500/20 transition-all">
                         Eliminar
@@ -571,6 +667,7 @@
             <p class="text-xs text-slate-500 mb-6 px-2 italic">Este alimento se guardará permanentemente en tu biblioteca para futuras búsquedas.</p>
             
             <form id="library-food-form" class="space-y-4" onsubmit="saveFoodToLibrary(event)">
+                <input type="hidden" id="lib-food-id">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-2">
                         <label class="text-xs font-bold text-slate-500 uppercase px-2">Nombre del Alimento</label>
@@ -609,6 +706,16 @@
                     <div class="space-y-2">
                         <label class="text-xs font-bold text-slate-500 uppercase px-2">Grasa (g)</label>
                         <input type="number" step="0.1" id="lib-food-g" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-rose-400">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Fibra (g)</label>
+                        <input type="number" step="0.1" id="lib-food-f" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-emerald-400">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase px-2">Azúcar (g)</label>
+                        <input type="number" step="0.1" id="lib-food-s" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-purple-400">
                     </div>
                 </div>
                 <button type="submit" class="w-full accent-gradient text-slate-950 font-black py-4 rounded-2xl shadow-lg mt-4 transition-transform hover:scale-[1.01] uppercase tracking-tighter">Guardar en Biblioteca</button>
@@ -739,6 +846,22 @@
         </div>
     </div>
 
+    <!-- MODAL: RESTABLECER CONTRASEÑA -->
+    <div id="modal-reset-password" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[250] hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-[2rem] p-8 border border-white/10 shadow-2xl">
+            <h3 class="text-2xl font-bold mb-6 text-white italic">Nueva Contraseña</h3>
+            <form id="reset-password-form" class="space-y-4">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase px-2">Introduce tu nueva contraseña</label>
+                    <input type="password" id="new-password" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 focus:outline-none focus:border-lime-400 transition-all text-white">
+                </div>
+                <button type="submit" class="w-full accent-gradient text-slate-950 font-bold py-4 rounded-2xl shadow-lg mt-4 transition-transform hover:scale-[1.01]">
+                    Actualizar Contraseña
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- MODAL: INFO CALORÍAS -->
     <div id="modal-calorie-info" onclick="closeModal('modal-calorie-info')" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
         <div class="glass-card w-full max-w-lg rounded-[2rem] p-8 border border-white/10 shadow-2xl" onclick="event.stopPropagation()">
@@ -858,12 +981,57 @@
                         <option value="user">Uso Personal</option>
                     </select>
                 </div>
+                <div class="pt-2">
+                    <button type="button" onclick="openModal('modal-pdf-settings')" class="w-full bg-white/5 border border-white/10 text-slate-300 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-xs hover:bg-white/10 transition-all">
+                        <i data-lucide="file-text" class="w-4 h-4"></i> Ajustes del PDF
+                    </button>
+                </div>
                 <div class="pt-4">
                     <button type="submit" class="w-full accent-gradient text-slate-950 font-bold py-4 rounded-2xl shadow-lg hover:scale-[1.01] transition-transform uppercase tracking-widest text-xs">
                         Guardar Cambios
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL: AJUSTES DEL PDF -->
+    <div id="modal-pdf-settings" onclick="closeModal('modal-pdf-settings')" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[110] hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-[2.5rem] p-8 border border-white/10 shadow-2xl" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="text-2xl font-black italic text-lime-400 flex items-center gap-3">
+                    <i data-lucide="file-text"></i> Personalizar PDF
+                </h3>
+                <button onclick="closeModal('modal-pdf-settings')" class="p-2 hover:bg-white/5 rounded-full transition-colors text-slate-500">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-6">
+                <div class="space-y-3">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 px-2">Tema de Exportación</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="setPdfTheme('light')" id="theme-btn-light" class="p-4 rounded-2xl border-2 border-lime-400 bg-white text-slate-900 font-bold text-sm">Modo Claro</button>
+                        <button onclick="setPdfTheme('dark')" id="theme-btn-dark" class="p-4 rounded-2xl border-2 border-slate-800 bg-slate-900 text-white font-bold text-sm">Modo Oscuro</button>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 px-2">Logo del Entrenador</label>
+                    <input type="file" id="coach-logo-input" accept="image/*" class="hidden" onchange="handleLogoUpload(this)">
+                    <button onclick="document.getElementById('coach-logo-input').click()" class="w-full py-8 border-2 border-dashed border-white/10 rounded-3xl flex flex-col items-center gap-2 hover:bg-white/5 transition-all group">
+                        <img id="logo-preview" src="" class="h-12 w-auto hidden object-contain mb-2">
+                        <i data-lucide="upload-cloud" class="w-8 h-8 text-slate-500 group-hover:text-lime-400"></i>
+                        <span class="text-xs font-bold text-slate-400">Subir Logo (PNG/JPG)</span>
+                    </button>
+                    <div id="logo-action-buttons" class="hidden flex gap-2">
+                        <button onclick="deleteCoachLogo()" class="flex-1 py-2 bg-rose-500/10 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all">
+                            Eliminar Logo
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-slate-600 italic px-2">El logo se ajustará automáticamente a un tamaño óptimo.</p>
+                </div>
+                <button onclick="closeModal('modal-pdf-settings')" class="w-full accent-gradient text-slate-950 font-bold py-4 rounded-2xl shadow-lg mt-4">Listo</button>
+            </div>
         </div>
     </div>
 
@@ -931,17 +1099,115 @@
         let selectedStudentCalories = 2800;
         let currentPlan = null;
         let isEditingStudent = false;
-        let currentPlanDate = new Date().toISOString().split('T')[0];
+        let currentMode = 'rutina'; // 'rutina' o 'calendario'
+        let selectedRoutineDay = 1;
+
+        // Obtener la fecha actual ajustada específicamente al huso horario de Venezuela (UTC-4)
+        // Esto evita que el plan cambie de día a las 8:00 PM local
+        const vnzDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+        let currentPlanDate = vnzDate;
+
         let editingFoodId = null; // Para saber si estamos editando o creando
         let baseFoodData = null; // Datos de referencia para el cálculo proporcional
         let editingSupplementId = null;
         let editingNoteId = null;
         let isSignUp = false;
+        let isAdmin = false;
+
+        // Configuración de PDF persistente
+        let coachPdfSettings = {
+            theme: 'light',
+            logoUrl: ''
+        };
+
+        function setPdfTheme(theme) {
+            coachPdfSettings.theme = theme;
+            document.getElementById('theme-btn-light').className = theme === 'light' ? 'p-4 rounded-2xl border-2 border-lime-400 bg-white text-slate-900 font-bold text-sm' : 'p-4 rounded-2xl border-2 border-slate-800 bg-slate-100 text-slate-400 font-bold text-sm opacity-50';
+            document.getElementById('theme-btn-dark').className = theme === 'dark' ? 'p-4 rounded-2xl border-2 border-lime-400 bg-slate-900 text-white font-bold text-sm' : 'p-4 rounded-2xl border-2 border-slate-800 bg-slate-900 text-slate-500 font-bold text-sm opacity-50';
+            saveCoachPreferences();
+        }
+
+        function handleLogoUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) return alert("El archivo es demasiado grande (máx 2MB)");
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 150;
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    const resizedBase64 = canvas.toDataURL('image/webp', 0.8);
+                    coachPdfSettings.logoUrl = resizedBase64;
+                    updateLogoUIPref(resizedBase64);
+                    saveCoachPreferences();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateLogoUIPref(url) {
+            const preview = document.getElementById('logo-preview');
+            const pdfLogo = document.getElementById('pdf-coach-logo');
+            const actionBtns = document.getElementById('logo-action-buttons');
+
+            if (url) {
+                preview.src = url; preview.classList.remove('hidden');
+                pdfLogo.src = url;
+                actionBtns.classList.remove('hidden');
+            } else {
+                preview.src = ""; preview.classList.add('hidden');
+                pdfLogo.src = "";
+                actionBtns.classList.add('hidden');
+            }
+        }
+
+        async function deleteCoachLogo() {
+            if (!confirm("¿Seguro que quieres eliminar el logo?")) return;
+            coachPdfSettings.logoUrl = '';
+            updateLogoUIPref('');
+            await saveCoachPreferences();
+        }
+
+        async function saveCoachPreferences() {
+            const { data: userData } = await _supabase.auth.getUser();
+            if (!userData?.user) return;
+            
+            // Buscamos el perfil del coach para guardar sus preferencias
+            await _supabase.from('profiles')
+                .update({ 
+                    pdf_theme: coachPdfSettings.theme,
+                    logo_url: coachPdfSettings.logoUrl 
+                })
+                .eq('coach_id', userData.user.id)
+                .eq('role', 'admin'); // O 'coach' según tu lógica
+        }
         
         // --- SISTEMA DE ADMINISTRACIÓN ---
         async function checkAdminStatus() {
             const { data: authData } = await _supabase.auth.getUser();
             if (!authData?.user) return;
+
+            // Cargar preferencias del coach
+            const { data: coachProfile } = await _supabase
+                .from('profiles')
+                .select('pdf_theme, logo_url')
+                .eq('coach_id', authData.user.id)
+                .maybeSingle(); // Usamos maybeSingle para evitar errores si no existe aún
+            if (coachProfile) {
+                coachPdfSettings.theme = coachProfile.pdf_theme || 'light';
+                coachPdfSettings.logoUrl = coachProfile.logo_url || '';
+                setPdfTheme(coachPdfSettings.theme);
+                updateLogoUIPref(coachPdfSettings.logoUrl);
+            }
 
             // Comprobamos si el perfil asociado al coach actual tiene rol 'admin'
             const { data, error } = await _supabase
@@ -952,9 +1218,12 @@
                 .limit(1);
 
             if (data && data.length > 0) {
+                isAdmin = true;
                 document.getElementById('admin-section').classList.remove('hidden');
+                const btnLib = document.getElementById('btn-add-to-library');
+                if (btnLib) btnLib.classList.remove('hidden');
                 lucide.createIcons();
-            }
+            } else { isAdmin = false; }
         }
 
         async function openAdminPanel() {
@@ -967,7 +1236,7 @@
             const { data, error } = await _supabase
                 .from('profiles')
                 .select('*')
-                .in('role', ['admin', 'user']) 
+                .neq('role', 'alumno') 
                 .order('full_name', { ascending: true });
 
             if (error) {
@@ -986,8 +1255,8 @@
                         </div>
                     </td>
                     <td class="px-6 py-5">
-                        <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${user.role === 'admin' ? 'bg-lime-400/10 text-lime-400 border border-lime-400/20' : 'bg-slate-800 text-slate-500 border border-white/5'}">
-                            ${user.role || 'user'}
+                        <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${user.role === 'admin' ? 'bg-lime-400/10 text-lime-400 border border-lime-400/20' : (user.role === 'coach' ? 'bg-blue-400/10 text-blue-400 border border-blue-400/20' : 'bg-slate-800 text-slate-300 border border-white/5')}">
+                            ${user.role === 'user' ? 'Uso Personal' : (user.role === 'coach' ? 'Entrenador' : (user.role || 'user'))}
                         </span>
                     </td>
                     <td class="px-6 py-5">
@@ -1067,6 +1336,11 @@
         _supabase.auth.onAuthStateChange((event, session) => {
             const user = session?.user;
 
+            if (event === "PASSWORD_RECOVERY") {
+                openModal('modal-reset-password');
+                return;
+            }
+
             if (session) {
                 // Si hay sesión pero el usuario no existe en la base de datos (fue borrado manualmente)
                 // o no tiene metadata, mostramos onboarding.
@@ -1079,7 +1353,10 @@
                     // Usuario autenticado y con perfil completo
                     document.getElementById('auth-screen').classList.add('hidden');
                     document.getElementById('modal-onboarding').classList.add('hidden');
-                    document.getElementById('main-sidebar').classList.remove('hidden');
+                    // Solo mostramos la sidebar automáticamente si estamos en escritorio
+                    if (window.innerWidth >= 768) {
+                        document.getElementById('main-sidebar').classList.remove('hidden');
+                    }
                     document.getElementById('main-content').classList.remove('hidden');
                     
                     const coachName = user.user_metadata.full_name;
@@ -1105,6 +1382,32 @@
             }
         });
 
+        async function handleForgotPassword() {
+            const email = document.getElementById('auth-email').value;
+            if (!email) {
+                alert("Por favor, introduce tu correo electrónico en el campo de email para enviarte el enlace de recuperación.");
+                return;
+            }
+            const { error } = await _supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + window.location.pathname,
+            });
+            if (error) alert("Error: " + error.message);
+            else alert("¡Enlace enviado! Revisa tu bandeja de entrada.");
+        }
+
+        document.getElementById('reset-password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newPassword = document.getElementById('new-password').value;
+            const { error } = await _supabase.auth.updateUser({ password: newPassword });
+            
+            if (error) {
+                alert("Error al actualizar: " + error.message);
+            } else {
+                alert("Contraseña actualizada con éxito. Ya puedes usar tu cuenta.");
+                closeModal('modal-reset-password');
+            }
+        });
+
         // Control de Modales
         function openModal(id, mealName = null) {
             const modal = document.getElementById(id);
@@ -1115,11 +1418,27 @@
             if (id === 'modal-add-food') {
                 document.getElementById('meal-id-input').value = editingFoodId || '';
                 const deleteBtn = document.getElementById('btn-delete-food');
+                const foodDateContainer = document.getElementById('food-date-container');
+                const foodDateInput = document.getElementById('food-date');
+
+                if (currentMode === 'rutina') {
+                    if (foodDateContainer) foodDateContainer.classList.add('hidden');
+                    if (foodDateInput) foodDateInput.removeAttribute('required');
+                } else {
+                    if (foodDateContainer) foodDateContainer.classList.remove('hidden');
+                    if (foodDateInput) {
+                        foodDateInput.setAttribute('required', 'true');
+                        foodDateInput.value = currentPlanDate;
+                    }
+                }
+
                 if (!editingFoodId) {
                     const lastMealType = document.getElementById('food-meal-name').value;
                     document.getElementById('food-form').reset();
                     baseFoodData = null; // Resetear datos base al crear nuevo
-                    document.getElementById('food-date').value = currentPlanDate;
+                    if (currentMode !== 'rutina') {
+                        document.getElementById('food-date').value = currentPlanDate;
+                    }
                     document.getElementById('food-meal-name').value = mealName || lastMealType || 'Desayuno';
                     deleteBtn.classList.add('hidden');
                 } else {
@@ -1266,11 +1585,235 @@
             }
         }
 
+        async function setDashboardMode(mode) {
+            if (!selectedStudentId) return;
+            currentMode = mode;
+            
+            // Guardar el modo en el perfil del alumno en Supabase
+            const { error } = await _supabase.from('profiles').update({ modo_rutina: mode === 'rutina' }).eq('id', selectedStudentId);
+            if (error) console.error("Error al guardar el modo:", error);
+            
+            // Actualizar localmente el alumno
+            if (currentStudent) currentStudent.modo_rutina = (mode === 'rutina');
+            
+            updateModeSelectorsUI();
+            await fetchStudentData(selectedStudentId);
+        }
+
+        function updateModeSelectorsUI() {
+            const btnRutina = document.getElementById('btn-mode-rutina');
+            const btnCalendario = document.getElementById('btn-mode-calendario');
+            const dateSelector = document.getElementById('plan-date-selector');
+            const daySelectorContainer = document.getElementById('routine-day-selector-container');
+            
+            if (currentMode === 'rutina') {
+                if (btnRutina) btnRutina.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-lime-400 text-slate-950';
+                if (btnCalendario) btnCalendario.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white';
+                if (dateSelector) dateSelector.classList.add('hidden');
+                if (daySelectorContainer) daySelectorContainer.classList.remove('hidden');
+                
+                updateRoutineDaySelectorOptions();
+            } else {
+                if (btnRutina) btnRutina.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white';
+                if (btnCalendario) btnCalendario.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-lime-400 text-slate-950';
+                if (dateSelector) dateSelector.classList.remove('hidden');
+                if (daySelectorContainer) daySelectorContainer.classList.add('hidden');
+            }
+        }
+
+        function updateRoutineDaySelectorOptions() {
+            const selector = document.getElementById('routine-day-selector');
+            if (!selector) return;
+            
+            const totalDays = currentStudent ? (currentStudent.dias_rutina || 1) : 1;
+            let optionsHTML = '';
+            for (let i = 1; i <= totalDays; i++) {
+                optionsHTML += `<option value="${i}">Día ${i}</option>`;
+            }
+            selector.innerHTML = optionsHTML;
+            selector.value = selectedRoutineDay;
+
+            // Habilitar/deshabilitar el botón de eliminar día si hay más de 1 día
+            const deleteBtn = document.getElementById('btn-delete-routine-day');
+            if (deleteBtn) {
+                if (totalDays > 1) {
+                    deleteBtn.disabled = false;
+                    deleteBtn.className = "p-2 bg-rose-500/10 hover:bg-rose-500/20 rounded-xl border border-rose-500/20 text-rose-500 hover:text-rose-400 transition-all no-export cursor-pointer";
+                    deleteBtn.title = `Eliminar Día ${selectedRoutineDay}`;
+                } else {
+                    deleteBtn.disabled = true;
+                    deleteBtn.className = "p-2 bg-slate-800/40 text-slate-600 rounded-xl border border-slate-700/30 cursor-not-allowed opacity-50 no-export";
+                    deleteBtn.title = "No se puede eliminar el único día de la rutina";
+                }
+            }
+        }
+
+        async function addNewRoutineDay() {
+            if (!selectedStudentId || !currentStudent) return;
+            
+            const nextDay = (currentStudent.dias_rutina || 1) + 1;
+            
+            // Actualizar en Supabase
+            const { error } = await _supabase.from('profiles')
+                .update({ dias_rutina: nextDay })
+                .eq('id', selectedStudentId);
+                
+            if (error) {
+                alert("Error al agregar día: " + error.message);
+                return;
+            }
+            
+            currentStudent.dias_rutina = nextDay;
+            selectedRoutineDay = nextDay;
+            
+            updateRoutineDaySelectorOptions();
+            await fetchStudentData(selectedStudentId);
+        }
+
+        async function changeRoutineDay(day) {
+            selectedRoutineDay = parseInt(day);
+            const deleteBtn = document.getElementById('btn-delete-routine-day');
+            if (deleteBtn && !deleteBtn.disabled) {
+                deleteBtn.title = `Eliminar Día ${selectedRoutineDay}`;
+            }
+            await fetchStudentData(selectedStudentId);
+        }
+
+        async function deleteCurrentRoutineDay() {
+            if (!selectedStudentId || !currentStudent) return;
+            const totalDays = currentStudent.dias_rutina || 1;
+            if (totalDays <= 1) return;
+
+            const dayToDelete = selectedRoutineDay;
+            if (!confirm(`¿Estás seguro de que deseas eliminar el Día ${dayToDelete}? Esta acción borrará todas sus comidas, suplementos y notas, y los días posteriores se reordenarán para mantener la secuencia.`)) {
+                return;
+            }
+
+            // 1. Eliminar todos los datos del día actual para este alumno
+            const deleteMeals = _supabase.from('comidas').delete().eq('alumno_id', selectedStudentId).eq('dia_rutina', dayToDelete);
+            const deleteSupps = _supabase.from('suplementos').delete().eq('alumno_id', selectedStudentId).eq('dia_rutina', dayToDelete);
+            const deleteNotes = _supabase.from('notas').delete().eq('alumno_id', selectedStudentId).eq('dia_rutina', dayToDelete);
+
+            const [mealsDelRes, suppsDelRes, notesDelRes] = await Promise.all([deleteMeals, deleteSupps, deleteNotes]);
+
+            if (mealsDelRes.error || suppsDelRes.error || notesDelRes.error) {
+                alert("Error al eliminar los datos del día: " + (mealsDelRes.error?.message || suppsDelRes.error?.message || notesDelRes.error?.message));
+                return;
+            }
+
+            // 2. Desplazar los días posteriores hacia atrás (dia_rutina = dia_rutina - 1)
+            // Desplazar comidas
+            const { data: mealsToShift } = await _supabase.from('comidas').select('id, dia_rutina').eq('alumno_id', selectedStudentId).gt('dia_rutina', dayToDelete);
+            if (mealsToShift && mealsToShift.length > 0) {
+                const promises = mealsToShift.map(item => 
+                    _supabase.from('comidas').update({ dia_rutina: item.dia_rutina - 1 }).eq('id', item.id)
+                );
+                await Promise.all(promises);
+            }
+
+            // Desplazar suplementos
+            const { data: suppsToShift } = await _supabase.from('suplementos').select('id, dia_rutina').eq('alumno_id', selectedStudentId).gt('dia_rutina', dayToDelete);
+            if (suppsToShift && suppsToShift.length > 0) {
+                const promises = suppsToShift.map(item => 
+                    _supabase.from('suplementos').update({ dia_rutina: item.dia_rutina - 1 }).eq('id', item.id)
+                );
+                await Promise.all(promises);
+            }
+
+            // Desplazar notas
+            const { data: notesToShift } = await _supabase.from('notas').select('id, dia_rutina').eq('alumno_id', selectedStudentId).gt('dia_rutina', dayToDelete);
+            if (notesToShift && notesToShift.length > 0) {
+                const promises = notesToShift.map(item => 
+                    _supabase.from('notas').update({ dia_rutina: item.dia_rutina - 1 }).eq('id', item.id)
+                );
+                await Promise.all(promises);
+            }
+
+            // 3. Decrementar total de días en el perfil
+            const nextTotalDays = totalDays - 1;
+            const { error: profileErr } = await _supabase.from('profiles')
+                .update({ dias_rutina: nextTotalDays })
+                .eq('id', selectedStudentId);
+
+            if (profileErr) {
+                alert("Error al actualizar perfil: " + profileErr.message);
+                return;
+            }
+
+            currentStudent.dias_rutina = nextTotalDays;
+            selectedRoutineDay = Math.max(1, dayToDelete - 1);
+            
+            updateRoutineDaySelectorOptions();
+            await fetchStudentData(selectedStudentId);
+            lucide.createIcons(); // Recargar iconos para refrescar Lucide
+        }
+
+        async function fetchAllRoutineData(studentId) {
+            const [mealsRes, suppsRes, notesRes] = await Promise.all([
+                _supabase.from('comidas').select('*').eq('alumno_id', studentId).not('dia_rutina', 'is', null),
+                _supabase.from('suplementos').select('*').eq('alumno_id', studentId).not('dia_rutina', 'is', null),
+                _supabase.from('notas').select('*').eq('alumno_id', studentId).not('dia_rutina', 'is', null)
+            ]);
+            return {
+                meals: mealsRes.data || [],
+                supplements: suppsRes.data || [],
+                notes: notesRes.data || []
+            };
+        }
+
+        function groupRoutineDataByDay(data, totalDays) {
+            const days = {};
+            for (let d = 1; d <= totalDays; d++) {
+                days[d] = {
+                    meals: [],
+                    supplements: [],
+                    notes: [],
+                    p: 0, c: 0, g: 0, f: 0, s: 0, cal: 0
+                };
+            }
+            
+            data.meals.forEach(item => {
+                const d = item.dia_rutina;
+                if (days[d]) {
+                    days[d].meals.push(item);
+                    days[d].cal += (item.Calorías || 0);
+                    days[d].p += (item['Proteínas (g)'] || 0);
+                    days[d].c += (item['Carbohidratos (g)'] || 0);
+                    days[d].g += (item['Grasas (g)'] || 0);
+                    days[d].f += (item.fibra || 0);
+                    days[d].s += (item.azucar || 0);
+                }
+            });
+            
+            data.supplements.forEach(item => {
+                const d = item.dia_rutina;
+                if (days[d]) {
+                    days[d].supplements.push(item);
+                }
+            });
+            
+            data.notes.forEach(item => {
+                const d = item.dia_rutina;
+                if (days[d]) {
+                    days[d].notes.push(item);
+                }
+            });
+            
+            return days;
+        }
+
         async function selectStudent(id, studentObject = null) {
             selectedStudentId = id;
             // Si pasamos el objeto directamente (onboarding), lo usamos; si no, buscamos en la lista cargada
             currentStudent = studentObject || allStudents.find(s => s.id === id);
             selectedStudentCalories = currentStudent.target_calories || 2800;
+            
+            // Configurar el modo actual (Rutina por defecto si no está definido)
+            currentMode = (currentStudent.modo_rutina !== false) ? 'rutina' : 'calendario';
+            selectedRoutineDay = 1;
+
+            // Actualizar botones de la interfaz y visibilidad
+            updateModeSelectorsUI();
             
             // Actualizar Nombre y mostrar acciones
             document.querySelector('header h2').innerText = currentStudent.full_name;
@@ -1290,8 +1833,11 @@
             renderStudentList(allStudents); // Refrescar para visualización de seleccionado
             await fetchStudentData(id);
             
-            // Cerrar sidebar en móvil tras seleccionar
-            if (window.innerWidth < 768) toggleSidebar();
+            // Cerrar sidebar en móvil tras seleccionar, pero solo si está abierta
+            if (window.innerWidth < 768) {
+                const sidebar = document.getElementById('main-sidebar');
+                if (sidebar && !sidebar.classList.contains('-translate-x-full')) toggleSidebar();
+            }
         }
 
         async function updateManualCalories() {
@@ -1397,6 +1943,7 @@
                     .from('biblioteca_alimentos')
                     .select('*')
                     .ilike('Alimento', `%${searchTerm}%`)
+                    // Aquí buscamos en la biblioteca global
                     .limit(10);
                 
                 if (error) {
@@ -1410,6 +1957,8 @@
 
                 if (data && data.length > 0) {
                     resultsBox.innerHTML = data.map(food => {
+                        // Detectamos el ID de forma flexible (id o ID)
+                        const foodId = food.id || food.ID;
                         // Detectar el nombre y detalles adicionales para distinguir variaciones
                         const name = food.Alimento || food.name || food.food_name || food.nombre || food.producto || 'Alimento sin nombre';
                         const detail = food.Variedad || food.Marca || '';
@@ -1422,21 +1971,33 @@
                         const fullDisplayName = detail ? `${name} <span class="text-lime-500/50 text-[10px] italic">(${detail})</span>` : name;
 
                         return `
-                            <div onclick='selectFoodFromLibrary(${JSON.stringify(food).replace(/'/g, "&apos;")})' 
-                                 class="p-4 hover:bg-white/10 cursor-pointer border-b border-white/5 last:border-0 text-sm group transition-all">
-                                <div class="flex justify-between items-start">
-                                    <span class="font-bold text-white group-hover:text-lime-400 transition-colors pr-2">${fullDisplayName}</span>
-                                    <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-lg font-mono">${serving}</span>
+                            <div class="p-4 hover:bg-white/10 border-b border-white/5 last:border-0 text-sm group transition-all flex justify-between items-center">
+                                <div onclick='selectFoodFromLibrary(${JSON.stringify(food).replace(/'/g, "&apos;")})' class="flex-1 cursor-pointer">
+                                    <div class="flex justify-between items-start">
+                                        <span class="font-bold text-white group-hover:text-lime-400 transition-colors pr-2">${fullDisplayName}</span>
+                                        <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-lg font-mono">${serving}</span>
+                                    </div>
+                                    <div class="flex gap-3 text-[10px] mt-1 italic text-slate-500">
+                                        <span class="text-blue-400/80">P: ${p}g</span> | 
+                                        <span class="text-amber-400/80">C: ${c}g</span> | 
+                                        <span class="text-rose-400/80">G: ${g}g</span> | 
+                                        <span class="text-emerald-400/80">F: ${food.fibra || 0}g</span> | 
+                                        <span class="text-slate-400 font-bold">${cal} kcal</span>
+                                    </div>
                                 </div>
-                                <div class="flex gap-3 text-[10px] mt-1 italic text-slate-500">
-                                    <span class="text-blue-400/80">P: ${p}g</span> | 
-                                    <span class="text-amber-400/80">C: ${c}g</span> | 
-                                    <span class="text-rose-400/80">G: ${g}g</span> | 
-                                    <span class="text-slate-400 font-bold">${cal} kcal</span>
-                                </div>
+                                ${isAdmin ? `
+                                <div class="flex gap-1 ml-4 no-export">
+                                    <button onclick='event.stopPropagation(); editFoodLibraryItem(${JSON.stringify(food).replace(/'/g, "&apos;")})' class="p-1.5 hover:bg-lime-400/20 text-slate-500 hover:text-lime-400 rounded-lg transition-colors" title="Editar de la DB">
+                                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <button onclick="event.stopPropagation(); deleteFoodLibraryItem('${foodId}', '${name.replace(/'/g, "\\'")}')" class="p-1.5 hover:bg-rose-500/20 text-slate-500 hover:text-rose-500 rounded-lg transition-colors" title="Borrar de la DB">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>` : ''}
                             </div>
                         `;
                     }).join('');
+                    lucide.createIcons();
                     resultsBox.classList.remove('hidden');
                 } else {
                     resultsBox.innerHTML = `<div class="p-4 text-slate-500 text-xs italic text-center">No se encontraron resultados para "${searchTerm}"</div>`;
@@ -1452,6 +2013,8 @@
             const p = food['Proteínas (g)'] || food.protein || food.proteins || 0;
             const c = food['Carbohidratos (g)'] || food.carbs || food.carbohydrates || 0;
             const g = food['Grasas (g)'] || food.fat || food.fats || 0;
+            const f = food.fibra || 0;
+            const s = food.azucar || 0;
             const cal = food['Calorías'] || food.calories || food.kcal || 0;
             const type = food.Tipo || food.category || 'Proteína';
 
@@ -1461,6 +2024,8 @@
                 p: p,
                 c: c,
                 g: g,
+                f: f,
+                s: s,
                 cal: cal
             };
 
@@ -1469,6 +2034,8 @@
             document.getElementById('food-p').value = p;
             document.getElementById('food-c').value = c;
             document.getElementById('food-g').value = g;
+            document.getElementById('food-f').value = f;
+            document.getElementById('food-s').value = s;
             document.getElementById('food-qty').value = serving;
             document.getElementById('food-type').value = type;
             document.getElementById('search-results').classList.add('hidden');
@@ -1487,6 +2054,8 @@
                 p: item.protein,
                 c: item.carbs,
                 g: item.fat,
+                f: item.fibra || 0,
+                s: item.azucar || 0,
                 cal: item.Calorías
             };
 
@@ -1498,6 +2067,8 @@
             document.getElementById('food-p').value = item.protein;
             document.getElementById('food-c').value = item.carbs;
             document.getElementById('food-g').value = item.fat;
+            document.getElementById('food-f').value = item.fibra || 0;
+            document.getElementById('food-s').value = item.azucar || 0;
         }
 
         // Nueva función para calcular macros proporcionalmente a la cantidad introducida
@@ -1513,6 +2084,8 @@
             document.getElementById('food-p').value = (baseFoodData.p * ratio).toFixed(1);
             document.getElementById('food-c').value = (baseFoodData.c * ratio).toFixed(1);
             document.getElementById('food-g').value = (baseFoodData.g * ratio).toFixed(1);
+            document.getElementById('food-f').value = (baseFoodData.f * ratio).toFixed(1);
+            document.getElementById('food-s').value = (baseFoodData.s * ratio).toFixed(1);
             document.getElementById('food-cal').value = Math.round(baseFoodData.cal * ratio);
         }
 
@@ -1546,12 +2119,19 @@
         async function updateMealTime(mealName, newTime) {
             if (!newTime || !selectedStudentId) return;
             
-            const { error } = await _supabase
+            let query = _supabase
                 .from('comidas')
                 .update({ hora_sugerida: newTime })
                 .eq('alumno_id', selectedStudentId)
-                .eq('nombre_comida', mealName)
-                .eq('fecha', currentPlanDate);
+                .eq('nombre_comida', mealName);
+
+            if (currentMode === 'rutina') {
+                query = query.eq('dia_rutina', selectedRoutineDay);
+            } else {
+                query = query.eq('fecha', currentPlanDate);
+            }
+
+            const { error } = await query;
 
             if (error) console.error("Error al actualizar hora:", error);
             else await fetchStudentData(selectedStudentId);
@@ -1561,11 +2141,25 @@
         async function fetchStudentData(studentId) {
             if (!studentId) return;
 
+            let mealsQuery = _supabase.from('comidas').select('*').eq('alumno_id', studentId);
+            let suppsQuery = _supabase.from('suplementos').select('*').eq('alumno_id', studentId);
+            let notesQuery = _supabase.from('notas').select('*').eq('alumno_id', studentId);
+
+            if (currentMode === 'rutina') {
+                mealsQuery = mealsQuery.eq('dia_rutina', selectedRoutineDay);
+                suppsQuery = suppsQuery.eq('dia_rutina', selectedRoutineDay);
+                notesQuery = notesQuery.eq('dia_rutina', selectedRoutineDay);
+            } else {
+                mealsQuery = mealsQuery.eq('fecha', currentPlanDate);
+                suppsQuery = suppsQuery.eq('fecha', currentPlanDate);
+                notesQuery = notesQuery.eq('fecha', currentPlanDate);
+            }
+
             // Consultas simultáneas para mejorar velocidad
             const [mealsRes, suppsRes, notesRes] = await Promise.all([
-                _supabase.from('comidas').select('*').eq('alumno_id', studentId).eq('fecha', currentPlanDate),
-                _supabase.from('suplementos').select('*').eq('alumno_id', studentId).eq('fecha', currentPlanDate),
-                _supabase.from('notas').select('*').eq('alumno_id', studentId).eq('fecha', currentPlanDate)
+                mealsQuery,
+                suppsQuery,
+                notesQuery
             ]);
 
             const foodEntries = mealsRes.data || [];
@@ -1581,6 +2175,15 @@
         }
 
         function processMeals(foodEntries) {
+            // Definimos el orden lógico de las comidas para que se muestren siempre igual
+            const mealOrderMap = {
+                'Desayuno': 1,
+                'Almuerzo': 2,
+                'Merienda': 3,
+                'Cena': 4,
+                'Snack': 5
+            };
+
             // Agrupamos los alimentos por 'nombre_comida' (Desayuno, Almuerzo...)
             const grouped = foodEntries.reduce((acc, item) => {
                 const mealName = item.nombre_comida || 'Otros';
@@ -1594,6 +2197,7 @@
                 target_calories: selectedStudentCalories,
                 meals: Object.keys(grouped).map(name => ({
                     name: name,
+                    sorting_order: mealOrderMap[name] || 99, // Si no está en el mapa, va al final
                     scheduled_time: grouped[name][0].hora_sugerida || 'Sin horario',
                     meal_items: grouped[name].map(i => ({
                         id: i.id,
@@ -1607,7 +2211,7 @@
                         nutriente_tipo: i.Tipo,
                         hora_sugerida: i.hora_sugerida || '00:00:00',
                         fibra: i.fibra || 0,
-                        agua: i.agua || 0,
+                        azucar: i.azucar || 0,
                         Calorías: i.Calorías || 0
                     }))
                 }))
@@ -1621,13 +2225,12 @@
             const user = authData?.user;
             const target = selectedStudentCalories || plan.target_calories || 0;
             
-            // Lógica de Bloqueo:
-            // Bloqueamos si el perfil es inactivo Y el usuario es 'user' (uso personal) 
-            // O si es un coach viendo su propio perfil inicial (el nombre coincide)
-            const isInactive = currentStudent && (currentStudent.activo === false || currentStudent.activo === null);
-            const isOwner = user && (user.user_metadata.role === 'user' || currentStudent?.full_name === user.user_metadata.full_name);
-            
-            const shouldBlock = isInactive && isOwner;
+            // Lógica de Bloqueo de Cuenta (Panel Master):
+            // Verificamos si la cuenta del usuario logueado (admin, coach o user) está activa.
+            // Buscamos su perfil principal en la lista (el que no tiene rol 'alumno').
+            const myProfile = allStudents.find(s => s.role !== 'alumno');
+            const isAccountInactive = myProfile && myProfile.role !== 'admin' && (myProfile.activo === false || myProfile.activo === null);
+            const shouldBlock = isAccountInactive;
 
             const mealListContainer = document.getElementById('meal-list');
             const activationBlock = document.getElementById('activation-block');
@@ -1641,7 +2244,15 @@
             // Reseteamos visibilidad por defecto
             activationBlock.classList.add('hidden');
             mealListContainer.classList.remove('hidden');
-            if (planActions) planActions.querySelectorAll('button').forEach(btn => btn.classList.remove('hidden'));
+            if (planActions) {
+                planActions.querySelectorAll('button').forEach(btn => {
+                    if (btn.id === 'btn-add-to-library') {
+                        btn.classList.toggle('hidden', !isAdmin);
+                    } else {
+                        btn.classList.remove('hidden');
+                    }
+                });
+            }
             if (btnNewStudent) btnNewStudent.classList.remove('hidden');
             if (btnAddSupplement) btnAddSupplement.classList.remove('hidden');
             if (btnAddNote) btnAddNote.classList.remove('hidden');
@@ -1664,7 +2275,7 @@
             }
 
             let consumed = 0;
-            let pTotGlobal = 0, cTotGlobal = 0, gTotGlobal = 0, fTotGlobal = 0, wTotGlobal = 0;
+            let pTotGlobal = 0, cTotGlobal = 0, gTotGlobal = 0, fTotGlobal = 0, sTotGlobal = 0;
 
             if (plan.meals) {
                 plan.meals.forEach(m => {
@@ -1674,12 +2285,12 @@
                         cTotGlobal += (i.carbs || 0);
                         gTotGlobal += (i.fat || 0);
                         fTotGlobal += (i.fibra || 0);
-                        wTotGlobal += (i.agua || 0);
+                        sTotGlobal += (i.azucar || 0);
                     });
                 });
             }
 
-            updateMacroDisplay(consumed, pTotGlobal, cTotGlobal, gTotGlobal, fTotGlobal, wTotGlobal, target);
+            updateMacroDisplay(consumed, pTotGlobal, cTotGlobal, gTotGlobal, fTotGlobal, sTotGlobal, target);
             
             // Renderizar Comidas
             if (!plan.meals || plan.meals.length === 0) {
@@ -1692,12 +2303,12 @@
         }
 
         // Función auxiliar para actualizar los números de la interfaz (limpieza de código)
-        function updateMacroDisplay(consumed, p, c, g, f, w, target) {
+        function updateMacroDisplay(consumed, p, c, g, f, s, target) {
             document.getElementById('current-p').innerText = `${Math.round(p)}g`;
             document.getElementById('current-c').innerText = `${Math.round(c)}g`;
             document.getElementById('current-g').innerText = `${Math.round(g)}g`;
             document.getElementById('current-f').innerText = `${Math.round(f)}g`;
-            document.getElementById('current-w').innerText = `${w.toFixed(1)}L`;
+            document.getElementById('current-s').innerText = `${Math.round(s)}g`;
 
             // Metas sugeridas (puedes personalizarlas después en el perfil del alumno)
             document.getElementById('target-p').innerText = `Meta: ${Math.round(target * 0.3 / 4)}g`;
@@ -1864,7 +2475,8 @@
 
             const data = {
                 alumno_id: selectedStudentId,
-                fecha: currentPlanDate,
+                fecha: currentMode === 'rutina' ? null : currentPlanDate,
+                dia_rutina: currentMode === 'rutina' ? selectedRoutineDay : null,
                 nombre: document.getElementById('supp-name').value,
                 dosis: document.getElementById('supp-dosage').value
             };
@@ -1888,7 +2500,8 @@
 
             const data = {
                 alumno_id: selectedStudentId,
-                fecha: currentPlanDate,
+                fecha: currentMode === 'rutina' ? null : currentPlanDate,
+                dia_rutina: currentMode === 'rutina' ? selectedRoutineDay : null,
                 contenido: document.getElementById('note-content').value
             };
 
@@ -1911,7 +2524,8 @@
 
             const foodData = {
                 'alumno_id': selectedStudentId,
-                'fecha': document.getElementById('food-date').value,
+                'fecha': currentMode === 'rutina' ? null : document.getElementById('food-date').value,
+                'dia_rutina': currentMode === 'rutina' ? selectedRoutineDay : null,
                 'nombre_comida': document.getElementById('food-meal-name').value,
                 'Alimento': document.getElementById('food-name').value,
                 'Tipo': document.getElementById('food-type').value,
@@ -1919,13 +2533,15 @@
                 'Calorías': parseFloat(document.getElementById('food-cal').value),
                 'Proteínas (g)': parseFloat(document.getElementById('food-p').value),
                 'Carbohidratos (g)': parseFloat(document.getElementById('food-c').value),
-                'Grasas (g)': parseFloat(document.getElementById('food-g').value)
+                'Grasas (g)': parseFloat(document.getElementById('food-g').value),
+                'fibra': parseFloat(document.getElementById('food-f').value || 0),
+                'azucar': parseFloat(document.getElementById('food-s').value || 0)
             };
 
             const currentId = document.getElementById('meal-id-input').value.trim();
 
             let result;
-            if (currentId && currentId !== "null" && currentId !== "") {
+            if (currentId && currentId !== "null" && currentId !== "" && currentId !== "undefined") {
                 result = await _supabase.from('comidas').update(foodData).eq('id', currentId);
             } else {
                 result = await _supabase.from('comidas').insert([foodData]);
@@ -1939,7 +2555,7 @@
                 editingFoodId = null;
                 closeModal('modal-add-food');
                 // Actualizar la fecha del dashboard si guardamos en una fecha distinta
-                if(savedDate !== currentPlanDate) changePlanDate(savedDate);
+                if(currentMode !== 'rutina' && savedDate !== currentPlanDate) changePlanDate(savedDate);
                 e.target.reset();
                 await fetchStudentData(selectedStudentId);
             }
@@ -1948,8 +2564,14 @@
         // Envío de Formulario para añadir a la Biblioteca Global
         async function saveFoodToLibrary(e) {
             e.preventDefault();
+            if (!isAdmin) return alert("Permiso denegado. Solo administradores pueden modificar la biblioteca.");
+
             const { data: userData } = await _supabase.auth.getUser();
             if (!userData?.user) return alert("Sesión no válida");
+
+            const libIdRaw = document.getElementById('lib-food-id').value.trim();
+            // Aseguramos que el ID sea numérico si la base de datos usa enteros, o lo mantenemos como string si es UUID
+            const libId = (libIdRaw && !isNaN(libIdRaw)) ? Number(libIdRaw) : libIdRaw;
 
             const foodData = {
                 'Alimento': document.getElementById('lib-food-name').value,
@@ -1959,17 +2581,83 @@
                 'Proteínas (g)': parseFloat(document.getElementById('lib-food-p').value),
                 'Carbohidratos (g)': parseFloat(document.getElementById('lib-food-c').value),
                 'Grasas (g)': parseFloat(document.getElementById('lib-food-g').value),
-                'created_by': userData.user.id
+                'fibra': parseFloat(document.getElementById('lib-food-f').value || 0),
+                'azucar': parseFloat(document.getElementById('lib-food-s').value || 0)
             };
 
-            const { error } = await _supabase.from('biblioteca_alimentos').insert([foodData]);
-
-            if (error) {
-                alert("Error al guardar en la biblioteca: " + error.message);
+            let result;
+            if (libId && libId !== "" && libId !== "undefined") {
+                // Actualizar alimento existente en la biblioteca
+                // Intentamos con 'id' (minúsculas) que es el estándar
+                result = await _supabase.from('biblioteca_alimentos')
+                    .update(foodData)
+                    .eq('id', libId)
+                    .select(); // Forzamos a que devuelva los datos para confirmar impacto
             } else {
-                alert("¡Alimento añadido a la biblioteca con éxito!");
+                // Insertar nuevo alimento
+                foodData.created_by = userData.user.id;
+                result = await _supabase.from('biblioteca_alimentos').insert([foodData]);
+            }
+
+            if (result.error) {
+                alert("Error al guardar en la biblioteca: " + result.error.message);
+            } else if (libId && (!result.data || result.data.length === 0)) {
+                alert("Atención: No se pudo actualizar el registro. Es posible que no tengas permisos para editar este alimento o el ID sea incorrecto.");
+            } else {
+                alert(libId ? "¡Alimento actualizado con éxito!" : "¡Alimento añadido a la biblioteca con éxito!");
                 closeModal('modal-library-food');
                 e.target.reset();
+                
+                // Refrescar la búsqueda actual para ver los cambios reflejados
+                const query = document.getElementById('food-name').value || document.getElementById('lib-food-name').value;
+                if (query) searchFoodLibrary(query);
+            }
+        }
+
+        function openLibraryModalForNew() {
+            document.getElementById('lib-food-id').value = '';
+            document.getElementById('library-food-form').reset();
+            const modal = document.getElementById('modal-library-food');
+            modal.querySelector('h3').innerHTML = '<i data-lucide="database"></i> Nuevo Alimento (DB)';
+            modal.querySelector('button[type="submit"]').innerText = 'Guardar en Biblioteca';
+            openModal('modal-library-food');
+            lucide.createIcons();
+        }
+
+        function editFoodLibraryItem(food) {
+            // Soporte para id o ID dependiendo de cómo se haya creado la tabla en Supabase
+            document.getElementById('lib-food-id').value = food.id || food.ID || '';
+            document.getElementById('lib-food-name').value = food.Alimento || food.name || '';
+            document.getElementById('lib-food-type').value = food.Tipo || 'Proteína';
+            document.getElementById('lib-food-qty').value = food['Porción'] || '100g';
+            document.getElementById('lib-food-cal').value = food['Calorías'] || 0;
+            document.getElementById('lib-food-p').value = food['Proteínas (g)'] || 0;
+            document.getElementById('lib-food-c').value = food['Carbohidratos (g)'] || 0;
+            document.getElementById('lib-food-g').value = food['Grasas (g)'] || 0;
+            document.getElementById('lib-food-f').value = food.fibra || 0;
+            document.getElementById('lib-food-s').value = food.azucar || 0;
+
+            const modal = document.getElementById('modal-library-food');
+            modal.querySelector('h3').innerHTML = '<i data-lucide="edit-3"></i> Editar Alimento (DB)';
+            modal.querySelector('button[type="submit"]').innerText = 'Actualizar Alimento';
+
+            openModal('modal-library-food');
+            lucide.createIcons();
+        }
+
+        async function deleteFoodLibraryItem(id, name) {
+            if (!isAdmin) return alert("Permiso denegado. Acción solo para administradores.");
+
+            if (confirm(`¿Estás seguro de que deseas eliminar permanentemente "${name}" de la biblioteca?`)) {
+                const { error } = await _supabase.from('biblioteca_alimentos').delete().eq('id', id);
+                if (error) {
+                    alert("Error al eliminar: " + error.message);
+                } else {
+                    alert("Alimento eliminado de la biblioteca.");
+                    // Refrescar búsqueda
+                    const query = document.getElementById('food-name').value;
+                    if (query) searchFoodLibrary(query);
+                }
             }
         }
 
@@ -1990,7 +2678,9 @@
                 age: parseInt(document.getElementById('student-age').value),
                 target_calories: calculateHarrisBenedict(),
                 coach_id: user.id,
-                role: 'alumno' // Marcamos como alumno para que no aparezca en el panel master
+                role: 'alumno', // Marcamos como alumno para que no aparezca en el panel master
+                modo_rutina: true,
+                dias_rutina: 1
             };
             
             console.log("Registrando alumno en Supabase...", studentData);
@@ -2030,6 +2720,10 @@
             const fullName = document.getElementById('onboarding-name').value;
             const role = document.getElementById('onboarding-role').value;
             
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Procesando...';
+
             // 1. Actualizar metadata del usuario auth
             const { error: authError } = await _supabase.auth.updateUser({
                 data: { 
@@ -2039,32 +2733,62 @@
                 }
             });
 
-            if (authError) return alert(authError.message);
+            if (authError) {
+                alert(authError.message);
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Finalizar y Crear mi Perfil';
+                return;
+            }
 
             // 2. Crear primer perfil automáticamente con los datos ingresados
             const studentData = {
                 full_name: fullName,
                 objective: 'Mantener el peso actual',
-                gender: 'Hombre',
+                gender: 'Hombre', // Valores por defecto para el perfil inicial
                 activity_level: 'Moderado',
                 current_weight: parseFloat(document.getElementById('onboarding-weight').value),
                 height: parseFloat(document.getElementById('onboarding-height').value),
                 age: parseInt(document.getElementById('onboarding-age').value),
                 coach_id: user.id,
-                avatar_seed: fullName
+                role: role,
+                avatar_seed: fullName,
+                modo_rutina: true,
+                dias_rutina: 1
             };
             
             // Usamos Harris-Benedict interno
             const kcal = (10 * studentData.current_weight) + (6.25 * studentData.height) - (5 * studentData.age) + 5;
             studentData.target_calories = Math.round(kcal * 1.55);
 
-            const { data: profileData, error: profileError } = await _supabase.from('profiles').insert([studentData]).select();
+            // Verificar si ya existe un perfil para este coach_id para evitar duplicados
+            const { data: existing } = await _supabase
+                .from('profiles')
+                .select('id')
+                .eq('coach_id', user.id)
+                .eq('role', role)
+                .maybeSingle();
+
+            let result;
+            if (existing) {
+                // Si ya existe por algún motivo (reintento), actualizamos
+                result = await _supabase.from('profiles').update(studentData).eq('id', existing.id).select();
+            } else {
+                // Si no existe, insertamos
+                result = await _supabase.from('profiles').insert([studentData]).select();
+            }
+
+            const { data: profileData, error: profileError } = result;
 
             if (profileError) {
                 console.error("Error al crear perfil inicial:", profileError);
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Finalizar y Crear mi Perfil';
             } else {
-                    // Actualizamos la lista local inmediatamente para que selectStudent lo encuentre
-                    allStudents.push(profileData[0]);
+                // Actualizamos la lista local inmediatamente
+                const idx = allStudents.findIndex(s => s.id === profileData[0].id);
+                if (idx !== -1) allStudents[idx] = profileData[0];
+                else allStudents.push(profileData[0]);
+
                 document.getElementById('modal-onboarding').classList.add('hidden');
                 document.getElementById('main-sidebar').classList.remove('hidden');
                 document.getElementById('main-content').classList.remove('hidden');
@@ -2103,42 +2827,708 @@
         async function exportPlanToPDF() {
             if (!selectedStudentId) return alert("Selecciona un alumno primero");
             
-            const element = document.querySelector('main');
-            const studentName = currentStudent ? currentStudent.full_name.replace(/\s+/g, '_') : 'Alumno';
+            const name = currentStudent ? currentStudent.full_name : 'Alumno';
+            const studentNameFile = name.replace(/\s+/g, '_');
             const date = currentPlanDate;
+            
+            const isDark = coachPdfSettings.theme === 'dark';
+            const bgColor = isDark ? '#020617' : '#ffffff';
+            const textColor = isDark ? '#f8fafc' : '#0f172a';
+            const secondaryTextColor = isDark ? '#94a3b8' : '#64748b';
+            const cardBg = isDark ? '#0f172a' : '#ffffff';
+            const borderColor = isDark ? '#1e293b' : '#e2e8f0';
+            const coachName = document.getElementById('display-coach-name').innerText || 'Coach';
 
-            // Formatear fecha para el PDF
-            const dateObj = new Date(date + 'T12:00:00');
-            const formattedDate = dateObj.toLocaleDateString('es-ES', { 
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-            });
-            document.getElementById('pdf-date-val').innerText = formattedDate;
+            const pdfContainer = document.createElement('div');
+            pdfContainer.style.padding = '35px';
+            pdfContainer.style.color = textColor;
+            pdfContainer.style.fontFamily = "'Plus Jakarta Sans', 'Inter', sans-serif";
+            pdfContainer.style.backgroundColor = bgColor;
+            pdfContainer.style.width = '740px'; // Ancho optimizado para A4
 
-            // Configuración del PDF
+            let html = '';
+
+            if (currentMode === 'rutina') {
+                const totalDays = currentStudent.dias_rutina || 1;
+                const rawData = await fetchAllRoutineData(selectedStudentId);
+                const groupedData = groupRoutineDataByDay(rawData, totalDays);
+
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px;">
+                        <div>
+                            <p style="font-size: 10px; font-weight: 800; color: #bef264; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 2px;">Plan de Rutina Nutricional</p>
+                            <h1 style="font-size: 32px; font-weight: 800; margin: 0; letter-spacing: -1.5px; color: ${textColor};">${name}</h1>
+                            <p style="font-size: 13px; color: ${secondaryTextColor}; margin-top: 4px;">Por <b>${coachName}</b> • Plan de ${totalDays} Días</p>
+                        </div>
+                        ${coachPdfSettings.logoUrl ? `<img src="${coachPdfSettings.logoUrl}" style="max-width: 120px; max-height: 80px; object-fit: contain;">` : '<div style="width: 40px; height: 40px; background: #bef264; border-radius: 12px;"></div>'}
+                    </div>
+                `;
+
+                for (let d = 1; d <= totalDays; d++) {
+                    const dayData = groupedData[d];
+                    const kcalRaw = dayData.cal.toLocaleString();
+                    const targetKcal = selectedStudentCalories || 2000;
+                    const kcalPct = Math.min(100, Math.round((dayData.cal / targetKcal) * 100));
+
+                    const mealOrderMap = { 'Desayuno': 1, 'Almuerzo': 2, 'Merienda': 3, 'Cena': 4, 'Snack': 5 };
+                    const groupedMeals = dayData.meals.reduce((acc, item) => {
+                        const mName = item.nombre_comida || 'Otros';
+                        if (!acc[mName]) acc[mName] = [];
+                        acc[mName].push(item);
+                        return acc;
+                    }, {});
+
+                    const orderedMeals = Object.keys(groupedMeals).map(mName => ({
+                        name: mName,
+                        sorting_order: mealOrderMap[mName] || 99,
+                        scheduled_time: groupedMeals[mName][0].hora_sugerida || 'Sin horario',
+                        items: groupedMeals[mName]
+                    })).sort((a, b) => a.sorting_order - b.sorting_order);
+
+                    html += `
+                        <div style="${d > 1 ? 'page-break-before: always;' : ''} margin-bottom: 40px; border-top: ${d > 1 ? `2px dashed ${borderColor}` : 'none'}; padding-top: ${d > 1 ? '30px' : '0'};">
+                            <h2 style="font-size: 24px; font-weight: 900; margin-bottom: 20px; color: #bef264; text-transform: uppercase;">
+                                DÍA ${d}
+                            </h2>
+                            
+                            <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+                                <div style="flex: 1.8; background: ${cardBg}; padding: 20px; border-radius: 20px; border: 1px solid ${borderColor};">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+                                        <span style="font-size: 10px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase;">Consumo Energético</span>
+                                        <span style="font-size: 18px; font-weight: 800;">${kcalRaw} <span style="font-size: 11px; color: ${secondaryTextColor}; font-weight: 400;">/ ${targetKcal} kcal</span></span>
+                                    </div>
+                                    <div style="height: 8px; background: ${isDark ? '#1e293b' : '#f1f5f9'}; border-radius: 10px; overflow: hidden; margin-bottom: 20px;">
+                                        <div style="height: 100%; width: ${kcalPct}%; background: linear-gradient(90deg, #bef264, #65a30d); border-radius: 10px;"></div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <div style="text-align: center; flex: 1;"><p style="font-size: 8px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 2px;">Proteína</p><p style="font-size: 14px; font-weight: 800; color: #3b82f6; margin:0;">${Math.round(dayData.p)}g</p></div>
+                                        <div style="text-align: center; flex: 1;"><p style="font-size: 8px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 2px;">Carbohidratos</p><p style="font-size: 14px; font-weight: 800; color: #f59e0b; margin:0;">${Math.round(dayData.c)}g</p></div>
+                                        <div style="text-align: center; flex: 1;"><p style="font-size: 8px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 2px;">Grasas</p><p style="font-size: 14px; font-weight: 800; color: #ef4444; margin:0;">${Math.round(dayData.g)}g</p></div>
+                                        <div style="text-align: center; flex: 1;"><p style="font-size: 8px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 2px;">Fibra</p><p style="font-size: 14px; font-weight: 800; color: #10b981; margin:0;">${Math.round(dayData.f)}g</p></div>
+                                    </div>
+                                </div>
+                                <div style="flex: 1; background: ${isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc'}; padding: 20px; border-radius: 20px; border: 1px solid ${borderColor}; display: flex; flex-direction: column; justify-content: center; text-align: center;">
+                                    <p style="font-size: 9px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 4px;">Objetivo</p>
+                                    <p style="font-size: 12px; font-weight: 800; color: #bef264; text-transform: uppercase; margin: 0;">${currentStudent.objective || 'Mantenimiento'}</p>
+                                    <div style="height: 1px; background: ${borderColor}; margin: 10px 0;"></div>
+                                    <div style="display: flex; justify-content: space-around;">
+                                        <div><p style="font-size: 14px; font-weight: 800; margin:0;">${currentStudent.current_weight}kg</p><p style="font-size: 8px; color: ${secondaryTextColor};">PESO</p></div>
+                                        <div><p style="font-size: 14px; font-weight: 800; margin:0;">${currentStudent.age}</p><p style="font-size: 8px; color: ${secondaryTextColor};">EDAD</p></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 15px; color: ${textColor};">🍴 Plan de Comidas - Día ${d}</h3>
+                    `;
+
+                    if (orderedMeals.length === 0) {
+                        html += `<div style="background: ${cardBg}; border: 1px dashed ${borderColor}; padding: 20px; border-radius: 16px; text-align: center; color: ${secondaryTextColor}; font-style: italic;">No hay comidas registradas para el Día ${d}</div>`;
+                    } else {
+                        orderedMeals.forEach((meal, mIdx) => {
+                            html += `
+                                <div style="margin-bottom: 20px; page-break-inside: avoid;">
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                        <div style="width: 24px; height: 24px; background: #bef264; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #020617; font-size: 11px;">${mIdx + 1}</div>
+                                        <h4 style="font-size: 14px; font-weight: 800; margin: 0; color: ${textColor};">${meal.name} <span style="font-size: 10px; font-weight: 600; color: ${secondaryTextColor}; margin-left: 6px;">• ${meal.scheduled_time.substring(0, 5)}</span></h4>
+                                    </div>
+                                    <div style="background: ${cardBg}; border: 1px solid ${borderColor}; border-radius: 16px; overflow: hidden;">
+                                        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                                            <thead style="background: ${isDark ? 'rgba(255,255,255,0.02)' : '#f8fafc'}; border-bottom: 1px solid ${borderColor};">
+                                                <tr>
+                                                    <th style="padding: 10px 15px; text-align: left; color: ${secondaryTextColor}; font-weight: 800; text-transform: uppercase; font-size: 8px;">Alimento</th>
+                                                    <th style="padding: 10px 15px; text-align: center; color: ${secondaryTextColor}; font-weight: 800; text-transform: uppercase; font-size: 8px;">Cantidad</th>
+                                                    <th style="padding: 10px 15px; text-align: right; color: ${secondaryTextColor}; font-weight: 800; text-transform: uppercase; font-size: 8px;">Macros / Kcal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                            `;
+
+                            meal.items.forEach((item, rIdx) => {
+                                const isLast = rIdx === meal.items.length - 1;
+                                const rowStyle = isLast ? '' : `border-bottom: 1px solid ${borderColor};`;
+                                html += `
+                                    <tr style="${rowStyle}">
+                                        <td style="padding: 10px 15px; font-weight: 700; color: ${textColor};">${item.Alimento}</td>
+                                        <td style="padding: 10px 15px; text-align: center;"><span style="background: ${isDark ? '#1e293b' : '#f1f5f9'}; padding: 3px 8px; border-radius: 6px; font-size: 9px; font-weight: 800;">${item['Porción']}</span></td>
+                                        <td style="padding: 10px 15px; text-align: right; font-weight: 700;">
+                                            <span style="color: ${secondaryTextColor}; font-size: 9px; font-weight: 600;">P: ${Math.round(item['Proteínas (g)'])}g / C: ${Math.round(item['Carbohidratos (g)'])}g / G: ${Math.round(item['Grasas (g)'])}g</span>
+                                            <span style="color: #bef264; margin-left: 8px;">${Math.round(item.Calorías)} kcal</span>
+                                        </td>
+                                    </tr>
+                                `;
+                            });
+
+                            html += `</tbody></table></div></div>`;
+                        });
+                    }
+
+                    if (dayData.supplements.length > 0 || dayData.notes.length > 0) {
+                        html += `<div style="display: flex; gap: 20px; margin-top: 15px; page-break-inside: avoid;">`;
+                        
+                        html += `<div style="flex: 1;">`;
+                        if (dayData.supplements.length > 0) {
+                            html += `<h4 style="font-size: 13px; font-weight: 800; color: #bef264; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">💊 Suplementación</h4>`;
+                            dayData.supplements.forEach(s => {
+                                html += `
+                                    <div style="background: ${cardBg}; border: 1px solid ${borderColor}; padding: 10px 12px; border-radius: 12px; margin-bottom: 6px;">
+                                        <p style="font-size: 11px; font-weight: 800; margin: 0; color: ${textColor};">${s.nombre}</p>
+                                        <p style="font-size: 9px; color: #bef264; font-weight: 700; margin-top: 2px;">${s.dosis}</p>
+                                    </div>
+                                `;
+                            });
+                        }
+                        html += `</div>`;
+
+                        html += `<div style="flex: 1;">`;
+                        if (dayData.notes.length > 0) {
+                            html += `<h4 style="font-size: 13px; font-weight: 800; color: #secondaryTextColor; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">📝 Notas Estratégicas</h4>`;
+                            dayData.notes.forEach(n => {
+                                html += `
+                                    <div style="background: ${isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc'}; border: 1px solid ${borderColor}; padding: 10px 12px; border-radius: 12px; margin-bottom: 6px; font-style: italic; font-size: 10px; line-height: 1.4; color: ${secondaryTextColor};">
+                                        "${n.contenido}"
+                                    </div>
+                                `;
+                            });
+                        }
+                        html += `</div></div>`;
+                    }
+                    
+                    html += `</div>`;
+                }
+
+                html += `
+                    <div style="margin-top: 40px; text-align: center; border-top: 1px solid ${borderColor}; padding-top: 20px;">
+                        <p style="font-size: 9px; color: ${secondaryTextColor}; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;">PowerPlan PRO • Plan de Rutina Nutricional</p>
+                    </div>
+                `;
+
+                pdfContainer.innerHTML = html;
+            } else {
+                const kcalRaw = document.getElementById('current-calories').innerText;
+                const p = document.getElementById('current-p').innerText;
+                const c = document.getElementById('current-c').innerText;
+                const g = document.getElementById('current-g').innerText;
+                const f = document.getElementById('current-f').innerText;
+
+                const kcalNum = parseInt(kcalRaw.replace(/[,.]/g, '')) || 0;
+                const targetKcal = selectedStudentCalories || 2000;
+                const kcalPct = Math.min(100, Math.round((kcalNum / targetKcal) * 100));
+
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px;">
+                        <div>
+                            <p style="font-size: 10px; font-weight: 800; color: #bef264; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 2px;">Informe Nutricional</p>
+                            <h1 style="font-size: 32px; font-weight: 800; margin: 0; letter-spacing: -1.5px; color: ${textColor};">${name}</h1>
+                            <p style="font-size: 13px; color: ${secondaryTextColor}; margin-top: 4px;">Por <b>${coachName}</b> • ${date}</p>
+                        </div>
+                        ${coachPdfSettings.logoUrl ? `<img src="${coachPdfSettings.logoUrl}" style="max-width: 120px; max-height: 80px; object-fit: contain;">` : '<div style="width: 40px; height: 40px; background: #bef264; border-radius: 12px;"></div>'}
+                    </div>
+
+                    <div style="display: flex; gap: 20px; margin-bottom: 40px;">
+                        <div style="flex: 1.8; background: ${cardBg}; padding: 25px; border-radius: 24px; border: 1px solid ${borderColor}; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px;">
+                                <span style="font-size: 11px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase;">Consumo Energético</span>
+                                <span style="font-size: 20px; font-weight: 800;">${kcalRaw} <span style="font-size: 12px; color: ${secondaryTextColor}; font-weight: 400;">/ ${targetKcal} kcal</span></span>
+                            </div>
+                            <div style="height: 10px; background: ${isDark ? '#1e293b' : '#f1f5f9'}; border-radius: 10px; overflow: hidden; margin-bottom: 25px;">
+                                <div style="height: 100%; width: ${kcalPct}%; background: linear-gradient(90deg, #bef264, #65a30d); border-radius: 10px;"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <div style="text-align: center; flex: 1;"><p style="font-size: 9px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 4px;">Proteína</p><p style="font-size: 15px; font-weight: 800; color: #3b82f6; margin:0;">${p}</p></div>
+                                <div style="text-align: center; flex: 1;"><p style="font-size: 9px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 4px;">Carbohidratos</p><p style="font-size: 15px; font-weight: 800; color: #f59e0b; margin:0;">${c}</p></div>
+                                <div style="text-align: center; flex: 1;"><p style="font-size: 9px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 4px;">Grasas</p><p style="font-size: 15px; font-weight: 800; color: #ef4444; margin:0;">${g}</p></div>
+                                <div style="text-align: center; flex: 1;"><p style="font-size: 9px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 4px;">Fibra</p><p style="font-size: 15px; font-weight: 800; color: #10b981; margin:0;">${f}</p></div>
+                            </div>
+                        </div>
+
+                        <div style="flex: 1; background: ${isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc'}; padding: 25px; border-radius: 24px; border: 1px solid ${borderColor}; display: flex; flex-direction: column; justify-content: center;">
+                            <p style="font-size: 10px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 8px; text-align: center;">Objetivo Actual</p>
+                            <p style="font-size: 14px; font-weight: 800; text-align: center; color: #bef264; text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">${currentStudent.objective || 'Mantenimiento'}</p>
+                            <div style="height: 1px; background: ${borderColor}; margin: 15px 0;"></div>
+                            <div style="display: flex; justify-content: space-around; text-align: center;">
+                                <div><p style="font-size: 16px; font-weight: 800; margin:0;">${currentStudent.current_weight}kg</p><p style="font-size: 9px; color: ${secondaryTextColor}; font-weight: 700;">PESO</p></div>
+                                <div><p style="font-size: 16px; font-weight: 800; margin:0;">${currentStudent.age}</p><p style="font-size: 9px; color: ${secondaryTextColor}; font-weight: 700;">EDAD</p></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 20px; color: ${textColor}; display: flex; align-items: center; gap: 10px;">
+                        <span style="color: #bef264;">✦</span> Plan de Comidas
+                    </h2>
+                `;
+
+                const mealCards = document.querySelectorAll('#meal-list > div.glass-card');
+                mealCards.forEach((card, mIdx) => {
+                    const title = card.querySelector('h4')?.innerText || 'Comida';
+                    const time = card.querySelector('input[type="time"]')?.value || '--:--';
+                    
+                    html += `
+                        <div style="margin-bottom: 30px; page-break-inside: avoid;">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                <div style="width: 28px; height: 28px; background: #bef264; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #020617; font-size: 12px;">${mIdx + 1}</div>
+                                <h3 style="font-size: 16px; font-weight: 800; margin: 0; color: ${textColor};">${title} <span style="font-size: 11px; font-weight: 600; color: ${secondaryTextColor}; margin-left: 6px;">• ${time}</span></h3>
+                            </div>
+                            <div style="background: ${cardBg}; border: 1px solid ${borderColor}; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                    <thead style="background: ${isDark ? 'rgba(255,255,255,0.02)' : '#f8fafc'}; border-bottom: 1px solid ${borderColor};">
+                                        <tr>
+                                            <th style="padding: 12px 20px; text-align: left; color: ${secondaryTextColor}; font-weight: 800; text-transform: uppercase; font-size: 9px; letter-spacing: 0.5px;">Alimento</th>
+                                            <th style="padding: 12px 20px; text-align: center; color: ${secondaryTextColor}; font-weight: 800; text-transform: uppercase; font-size: 9px; letter-spacing: 0.5px;">Cantidad</th>
+                                            <th style="padding: 12px 20px; text-align: right; color: ${secondaryTextColor}; font-weight: 800; text-transform: uppercase; font-size: 9px; letter-spacing: 0.5px;">Macros / Kcal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+
+                    const rows = card.querySelectorAll('tbody tr');
+                    rows.forEach((row, rIdx) => {
+                        const food = row.cells[0]?.innerText;
+                        const qty = row.cells[1]?.innerText || '';
+                        const macros = row.cells[3]?.innerText.replace(/\s/g, '');
+                        const cals = row.cells[4]?.innerText;
+                        
+                        const isLast = rIdx === rows.length - 1;
+                        const rowStyle = isLast ? '' : `border-bottom: 1px solid ${borderColor};`;
+
+                        html += `
+                            <tr style="${rowStyle}">
+                                <td style="padding: 14px 20px; font-weight: 700; color: ${textColor};">${food}</td>
+                                <td style="padding: 14px 20px; text-align: center;"><span style="background: ${isDark ? '#1e293b' : '#f1f5f9'}; padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: 800;">${qty}</span></td>
+                                <td style="padding: 14px 20px; text-align: right; font-weight: 700;">
+                                    <span style="color: ${secondaryTextColor}; font-size: 10px; font-weight: 600;">${macros}</span>
+                                    <span style="color: #bef264; margin-left: 10px;">${cals}</span>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `</table></div></div>`;
+                });
+
+                html += `<div style="display: flex; gap: 20px; margin-top: 10px; page-break-inside: avoid;">`;
+
+                const suppItems = document.querySelectorAll('#supplement-list > div.bg-white\\/5');
+                html += `<div style="flex: 1;">`;
+                if (suppItems.length > 0) {
+                    html += `<h3 style="font-size: 14px; font-weight: 800; color: #bef264; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px;">💊 Suplementación</h3>`;
+                    suppItems.forEach(s => {
+                        const sName = s.querySelector('span.font-semibold')?.innerText;
+                        const sDose = s.querySelector('span.bg-lime-400\\/10')?.innerText;
+                        html += `
+                            <div style="background: ${cardBg}; border: 1px solid ${borderColor}; padding: 12px 15px; border-radius: 16px; margin-bottom: 8px;">
+                                <p style="font-size: 12px; font-weight: 800; margin: 0; color: ${textColor};">${sName}</p>
+                                <p style="font-size: 10px; color: #bef264; font-weight: 700; margin-top: 2px;">${sDose}</p>
+                            </div>
+                        `;
+                    });
+                }
+                html += `</div>`;
+
+                const noteItems = document.querySelectorAll('#notes-container p');
+                html += `<div style="flex: 1;">`;
+                if (noteItems.length > 0 && !noteItems[0].innerText.includes('Sin notas')) {
+                    html += `<h3 style="font-size: 14px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px;">📝 Notas Estratégicas</h3>`;
+                    noteItems.forEach(n => {
+                        html += `
+                            <div style="background: ${isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc'}; border: 1px solid ${borderColor}; padding: 12px 15px; border-radius: 16px; margin-bottom: 8px; font-style: italic; font-size: 11px; line-height: 1.5; color: ${secondaryTextColor};">
+                                "${n.innerText}"
+                            </div>
+                        `;
+                    });
+                }
+                html += `</div></div>`;
+
+                html += `
+                    <div style="margin-top: 50px; text-align: center; border-top: 1px solid ${borderColor}; padding-top: 20px;">
+                        <p style="font-size: 9px; color: ${secondaryTextColor}; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;">PowerPlan PRO • Gestión Nutricional de Alto Rendimiento</p>
+                    </div>
+                `;
+
+                pdfContainer.innerHTML = html;
+            }
+
             const opt = {
-                margin: [15, 10, 15, 10],
-                filename: `Plan_${studentName}_${date}.pdf`,
+                margin: 0,
+                filename: `Plan_${studentNameFile}_${currentMode === 'rutina' ? 'Rutina' : date}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
                     scale: 2, 
                     useCORS: true, 
-                    letterRendering: true,
-                    backgroundColor: '#ffffff',
-                    ignoreElements: (el) => el.classList.contains('no-export'),
-                    onclone: (clonedDoc) => {
-                        // Aplicamos la clase al clon para que el PDF salga con estilo claro
-                        // pero el usuario nunca verá el cambio en su pantalla
-                        clonedDoc.body.classList.add('pdf-export-mode');
-                    }
+                    backgroundColor: bgColor,
+                    letterRendering: true
                 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                 pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
             };
 
             try {
-                await html2pdf().set(opt).from(element).save();
-            } catch (err) {
-                console.error("Error PDF:", err);
+                await html2pdf().set(opt).from(pdfContainer).save();
+            } catch (err) { console.error("Error PDF:", err); }
+        }
+
+        function toggleExportMenu() {
+            const menu = document.getElementById('export-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Cerrar menú al hacer clic fuera
+        window.addEventListener('click', (e) => {
+            const container = document.getElementById('export-btn-container');
+            const menu = document.getElementById('export-menu');
+            if (container && !container.contains(e.target) && menu) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        async function exportToWhatsApp() {
+            if (!selectedStudentId || !currentStudent) return alert("Selecciona un alumno primero");
+            
+            let text = `*⭐ POWERPLAN PRO - PLAN NUTRICIONAL*\n`;
+            text += `*👤 Cliente:* ${currentStudent.full_name}\n`;
+            
+            if (currentMode === 'rutina') {
+                text += `*📅 Tipo:* Rutina de ${currentStudent.dias_rutina || 1} Días\n`;
+                text += `============================\n\n`;
+
+                const totalDays = currentStudent.dias_rutina || 1;
+                const rawData = await fetchAllRoutineData(selectedStudentId);
+                const groupedData = groupRoutineDataByDay(rawData, totalDays);
+
+                for (let d = 1; d <= totalDays; d++) {
+                    const dayData = groupedData[d];
+                    const kcal = dayData.cal.toLocaleString();
+                    const p = Math.round(dayData.p);
+                    const c = Math.round(dayData.c);
+                    const g = Math.round(dayData.g);
+
+                    text += `*DÍA ${d}*\n`;
+                    text += `*📊 RESUMEN DIARIO*\n`;
+                    text += `> Calorías: *${kcal} kcal*\n`;
+                    text += `> Macros: P: ${p}g | C: ${c}g | G: ${g}g\n\n`;
+
+                    const mealOrderMap = { 'Desayuno': 1, 'Almuerzo': 2, 'Merienda': 3, 'Cena': 4, 'Snack': 5 };
+                    const groupedMeals = dayData.meals.reduce((acc, item) => {
+                        const mName = item.nombre_comida || 'Otros';
+                        if (!acc[mName]) acc[mName] = [];
+                        acc[mName].push(item);
+                        return acc;
+                    }, {});
+
+                    const orderedMeals = Object.keys(groupedMeals).map(mName => ({
+                        name: mName,
+                        sorting_order: mealOrderMap[mName] || 99,
+                        scheduled_time: groupedMeals[mName][0].hora_sugerida || 'Sin horario',
+                        items: groupedMeals[mName]
+                    })).sort((a, b) => a.sorting_order - b.sorting_order);
+
+                    if (orderedMeals.length > 0) {
+                        text += `*🍴 MENÚ DEL DÍA*\n`;
+                        orderedMeals.forEach(meal => {
+                            text += `*${meal.name.toUpperCase()} (${meal.scheduled_time.substring(0, 5)})*\n`;
+                            meal.items.forEach(item => {
+                                text += `- ${item.Alimento} (${item['Porción']})\n`;
+                            });
+                        });
+                        text += `\n`;
+                    }
+
+                    if (dayData.supplements.length > 0) {
+                        text += `*💊 SUPLEMENTACIÓN*\n`;
+                        dayData.supplements.forEach(s => {
+                            text += `- ${s.nombre}: ${s.dosis}\n`;
+                        });
+                        text += `\n`;
+                    }
+
+                    if (dayData.notes.length > 0) {
+                        text += `*📝 NOTAS*\n`;
+                        dayData.notes.forEach(n => {
+                            text += `_• ${n.contenido}_\n`;
+                        });
+                        text += `\n`;
+                    }
+                    
+                    text += `----------------------------\n\n`;
+                }
+            } else {
+                text += `*📅 Fecha:* ${document.getElementById('plan-date-selector').value}\n`;
+                text += `============================\n\n`;
+
+                const kcal = document.getElementById('current-calories').innerText;
+                const p = document.getElementById('current-p').innerText;
+                const c = document.getElementById('current-c').innerText;
+                const g = document.getElementById('current-g').innerText;
+                
+                text += `*📊 RESUMEN DIARIO*\n`;
+                text += `> Calorías: *${kcal} kcal*\n`;
+                text += `> Macros: P: ${p} | C: ${c} | G: ${g}\n\n`;
+
+                const mealCards = document.querySelectorAll('#meal-list > div.glass-card');
+                if (mealCards.length > 0) {
+                    text += `*🍴 MENU DEL DIA*\n`;
+                    mealCards.forEach(card => {
+                        const title = card.querySelector('h4')?.innerText || 'Comida';
+                        const time = card.querySelector('input[type="time"]')?.value || '--:--';
+                        text += `\n*${title.toUpperCase()} (${time})*\n`;
+                        
+                        const rows = card.querySelectorAll('tbody tr');
+                        rows.forEach(row => {
+                            const food = row.cells[0]?.innerText;
+                            const qty = row.cells[1]?.innerText;
+                            if (food && qty) text += `- ${food} (${qty})\n`;
+                        });
+                    });
+                    text += `\n`;
+                }
+
+                const suppItems = document.querySelectorAll('#supplement-list > div.bg-white\\/5');
+                if (suppItems.length > 0) {
+                    text += `*💊 SUPLEMENTACIÓN*\n`;
+                    suppItems.forEach(s => {
+                        const name = s.querySelector('span.font-semibold')?.innerText;
+                        const dose = s.querySelector('span.bg-lime-400\\/10')?.innerText;
+                        text += `- ${name}: ${dose}\n`;
+                    });
+                    text += `\n`;
+                }
+
+                const noteItems = document.querySelectorAll('#notes-container p');
+                if (noteItems.length > 0 && !noteItems[0].innerText.includes('Sin notas')) {
+                    text += `*📝 NOTAS*\n`;
+                    noteItems.forEach(n => text += `_• ${n.innerText}_\n`);
+                }
+            }
+
+            const encoded = encodeURIComponent(text);
+            window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
+        }
+
+        async function exportToImage() {
+            if (!selectedStudentId || !currentStudent) return alert("Selecciona un alumno primero");
+            
+            const isDark = coachPdfSettings.theme === 'dark';
+            const bgColor = isDark ? '#020617' : '#ffffff';
+            const textColor = isDark ? '#f8fafc' : '#0f172a';
+            const secondaryTextColor = isDark ? '#94a3b8' : '#64748b';
+            const cardBg = isDark ? '#0f172a' : '#ffffff';
+            const borderColor = isDark ? '#1e293b' : '#e2e8f0';
+            const coachName = document.getElementById('display-coach-name').innerText || 'Coach';
+            const name = currentStudent.full_name;
+
+            let element;
+            let tempDiv = null;
+
+            if (currentMode === 'rutina') {
+                // Render all routine days inside a temp div offscreen
+                tempDiv = document.createElement('div');
+                tempDiv.style.position = 'absolute';
+                tempDiv.style.left = '-9999px';
+                tempDiv.style.width = '740px';
+                tempDiv.style.background = bgColor;
+                tempDiv.style.color = textColor;
+                tempDiv.style.padding = '35px';
+                tempDiv.style.fontFamily = "'Plus Jakarta Sans', 'Inter', sans-serif";
+                document.body.appendChild(tempDiv);
+
+                const totalDays = currentStudent.dias_rutina || 1;
+                const rawData = await fetchAllRoutineData(selectedStudentId);
+                const groupedData = groupRoutineDataByDay(rawData, totalDays);
+
+                let html = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px;">
+                        <div>
+                            <p style="font-size: 10px; font-weight: 800; color: #bef264; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 2px;">Plan de Rutina Nutricional</p>
+                            <h1 style="font-size: 32px; font-weight: 800; margin: 0; letter-spacing: -1.5px; color: ${textColor};">${name}</h1>
+                            <p style="font-size: 13px; color: ${secondaryTextColor}; margin-top: 4px;">Por <b>${coachName}</b> • Plan de ${totalDays} Días</p>
+                        </div>
+                        ${coachPdfSettings.logoUrl ? `<img src="${coachPdfSettings.logoUrl}" style="max-width: 120px; max-height: 80px; object-fit: contain;">` : '<div style="width: 40px; height: 40px; background: #bef264; border-radius: 12px;"></div>'}
+                    </div>
+                `;
+
+                for (let d = 1; d <= totalDays; d++) {
+                    const dayData = groupedData[d];
+                    const kcalRaw = dayData.cal.toLocaleString();
+                    const targetKcal = selectedStudentCalories || 2000;
+                    const kcalPct = Math.min(100, Math.round((dayData.cal / targetKcal) * 100));
+
+                    const mealOrderMap = { 'Desayuno': 1, 'Almuerzo': 2, 'Merienda': 3, 'Cena': 4, 'Snack': 5 };
+                    const groupedMeals = dayData.meals.reduce((acc, item) => {
+                        const mName = item.nombre_comida || 'Otros';
+                        if (!acc[mName]) acc[mName] = [];
+                        acc[mName].push(item);
+                        return acc;
+                    }, {});
+
+                    const orderedMeals = Object.keys(groupedMeals).map(mName => ({
+                        name: mName,
+                        sorting_order: mealOrderMap[mName] || 99,
+                        scheduled_time: groupedMeals[mName][0].hora_sugerida || 'Sin horario',
+                        items: groupedMeals[mName]
+                    })).sort((a, b) => a.sorting_order - b.sorting_order);
+
+                    html += `
+                        <div style="margin-bottom: 40px; border-top: ${d > 1 ? `2px dashed ${borderColor}` : 'none'}; padding-top: ${d > 1 ? '30px' : '0'};">
+                            <h2 style="font-size: 24px; font-weight: 900; margin-bottom: 20px; color: #bef264; text-transform: uppercase;">
+                                DÍA ${d}
+                            </h2>
+                            
+                            <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+                                <div style="flex: 1.8; background: ${cardBg}; padding: 20px; border-radius: 20px; border: 1px solid ${borderColor};">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+                                        <span style="font-size: 10px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase;">Consumo Energético</span>
+                                        <span style="font-size: 18px; font-weight: 800;">${kcalRaw} <span style="font-size: 11px; color: ${secondaryTextColor}; font-weight: 400;">/ ${targetKcal} kcal</span></span>
+                                    </div>
+                                    <div style="height: 8px; background: ${isDark ? '#1e293b' : '#f1f5f9'}; border-radius: 10px; overflow: hidden; margin-bottom: 20px;">
+                                        <div style="height: 100%; width: ${kcalPct}%; background: linear-gradient(90deg, #bef264, #65a30d); border-radius: 10px;"></div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <div style="text-align: center; flex: 1;"><p style="font-size: 8px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 2px;">Proteína</p><p style="font-size: 14px; font-weight: 800; color: #3b82f6; margin:0;">${Math.round(dayData.p)}g</p></div>
+                                        <div style="text-align: center; flex: 1;"><p style="font-size: 8px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 2px;">Carbohidratos</p><p style="font-size: 14px; font-weight: 800; color: #f59e0b; margin:0;">${Math.round(dayData.c)}g</p></div>
+                                        <div style="text-align: center; flex: 1;"><p style="font-size: 8px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 2px;">Grasas</p><p style="font-size: 14px; font-weight: 800; color: #ef4444; margin:0;">${Math.round(dayData.g)}g</p></div>
+                                        <div style="text-align: center; flex: 1;"><p style="font-size: 8px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 2px;">Fibra</p><p style="font-size: 14px; font-weight: 800; color: #10b981; margin:0;">${Math.round(dayData.f)}g</p></div>
+                                    </div>
+                                </div>
+                                <div style="flex: 1; background: ${isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc'}; padding: 20px; border-radius: 20px; border: 1px solid ${borderColor}; display: flex; flex-direction: column; justify-content: center; text-align: center;">
+                                    <p style="font-size: 9px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 4px;">Objetivo</p>
+                                    <p style="font-size: 12px; font-weight: 800; color: #bef264; text-transform: uppercase; margin: 0;">${currentStudent.objective || 'Mantenimiento'}</p>
+                                    <div style="height: 1px; background: ${borderColor}; margin: 10px 0;"></div>
+                                    <div style="display: flex; justify-content: space-around;">
+                                        <div><p style="font-size: 14px; font-weight: 800; margin:0;">${currentStudent.current_weight}kg</p><p style="font-size: 8px; color: ${secondaryTextColor};">PESO</p></div>
+                                        <div><p style="font-size: 14px; font-weight: 800; margin:0;">${currentStudent.age}</p><p style="font-size: 8px; color: ${secondaryTextColor};">EDAD</p></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 15px; color: ${textColor};">🍴 Plan de Comidas - Día ${d}</h3>
+                    `;
+
+                    if (orderedMeals.length === 0) {
+                        html += `<div style="background: ${cardBg}; border: 1px dashed ${borderColor}; padding: 20px; border-radius: 16px; text-align: center; color: ${secondaryTextColor}; font-style: italic;">No hay comidas registradas para el Día ${d}</div>`;
+                    } else {
+                        orderedMeals.forEach((meal, mIdx) => {
+                            html += `
+                                <div style="margin-bottom: 20px;">
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                        <div style="width: 24px; height: 24px; background: #bef264; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #020617; font-size: 11px;">${mIdx + 1}</div>
+                                        <h4 style="font-size: 14px; font-weight: 800; margin: 0; color: ${textColor};">${meal.name} <span style="font-size: 10px; font-weight: 600; color: ${secondaryTextColor}; margin-left: 6px;">• ${meal.scheduled_time.substring(0, 5)}</span></h4>
+                                    </div>
+                                    <div style="background: ${cardBg}; border: 1px solid ${borderColor}; border-radius: 16px; overflow: hidden;">
+                                        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                                            <thead style="background: ${isDark ? 'rgba(255,255,255,0.02)' : '#f8fafc'}; border-bottom: 1px solid ${borderColor};">
+                                                <tr>
+                                                    <th style="padding: 10px 15px; text-align: left; color: ${secondaryTextColor}; font-weight: 800; text-transform: uppercase; font-size: 8px;">Alimento</th>
+                                                    <th style="padding: 10px 15px; text-align: center; color: ${secondaryTextColor}; font-weight: 800; text-transform: uppercase; font-size: 8px;">Cantidad</th>
+                                                    <th style="padding: 10px 15px; text-align: right; color: ${secondaryTextColor}; font-weight: 800; text-transform: uppercase; font-size: 8px;">Macros / Kcal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                            `;
+
+                            meal.items.forEach((item, rIdx) => {
+                                const isLast = rIdx === meal.items.length - 1;
+                                const rowStyle = isLast ? '' : `border-bottom: 1px solid ${borderColor};`;
+                                html += `
+                                    <tr style="${rowStyle}">
+                                        <td style="padding: 10px 15px; font-weight: 700; color: ${textColor};">${item.Alimento}</td>
+                                        <td style="padding: 10px 15px; text-align: center;"><span style="background: ${isDark ? '#1e293b' : '#f1f5f9'}; padding: 3px 8px; border-radius: 6px; font-size: 9px; font-weight: 800;">${item['Porción']}</span></td>
+                                        <td style="padding: 10px 15px; text-align: right; font-weight: 700;">
+                                            <span style="color: ${secondaryTextColor}; font-size: 9px; font-weight: 600;">P: ${Math.round(item['Proteínas (g)'])}g / C: ${Math.round(item['Carbohidratos (g)'])}g / G: ${Math.round(item['Grasas (g)'])}g</span>
+                                            <span style="color: #bef264; margin-left: 8px;">${Math.round(item.Calorías)} kcal</span>
+                                        </td>
+                                    </tr>
+                                `;
+                            });
+
+                            html += `</tbody></table></div></div>`;
+                        });
+                    }
+
+                    if (dayData.supplements.length > 0 || dayData.notes.length > 0) {
+                        html += `<div style="display: flex; gap: 20px; margin-top: 15px;">`;
+                        
+                        html += `<div style="flex: 1;">`;
+                        if (dayData.supplements.length > 0) {
+                            html += `<h4 style="font-size: 13px; font-weight: 800; color: #bef264; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">💊 Suplementación</h4>`;
+                            dayData.supplements.forEach(s => {
+                                html += `
+                                    <div style="background: ${cardBg}; border: 1px solid ${borderColor}; padding: 10px 12px; border-radius: 12px; margin-bottom: 6px;">
+                                        <p style="font-size: 11px; font-weight: 800; margin: 0; color: ${textColor};">${s.nombre}</p>
+                                        <p style="font-size: 9px; color: #bef264; font-weight: 700; margin-top: 2px;">${s.dosis}</p>
+                                    </div>
+                                `;
+                            });
+                        }
+                        html += `</div>`;
+
+                        html += `<div style="flex: 1;">`;
+                        if (dayData.notes.length > 0) {
+                            html += `<h4 style="font-size: 13px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">📝 Notas Estratégicas</h4>`;
+                            dayData.notes.forEach(n => {
+                                html += `
+                                    <div style="background: ${isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc'}; border: 1px solid ${borderColor}; padding: 10px 12px; border-radius: 12px; margin-bottom: 6px; font-style: italic; font-size: 10px; line-height: 1.4; color: ${secondaryTextColor};">
+                                        "${n.contenido}"
+                                    </div>
+                                `;
+                            });
+                        }
+                        html += `</div></div>`;
+                    }
+                    
+                    html += `</div>`;
+                }
+
+                html += `
+                    <div style="margin-top: 40px; text-align: center; border-top: 1px solid ${borderColor}; padding-top: 20px;">
+                        <p style="font-size: 9px; color: ${secondaryTextColor}; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;">PowerPlan PRO • Plan de Rutina Nutricional</p>
+                    </div>
+                `;
+
+                tempDiv.innerHTML = html;
+                element = tempDiv;
+            } else {
+                element = document.getElementById('main-content');
+            }
+            
+            try {
+                const canvas = await html2canvas(element, {
+                    backgroundColor: currentMode === 'rutina' ? bgColor : '#020617',
+                    scale: 2,
+                    useCORS: true,
+                    ignoreElements: (el) => el.classList.contains('no-export')
+                });
+                
+                // Cleanup temp div
+                if (tempDiv && tempDiv.parentElement) document.body.removeChild(tempDiv);
+                
+                // Detección de iPhone/iOS para manejo especial
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+                if (isIOS) {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    const newWindow = window.open();
+                    if (newWindow) {
+                        newWindow.document.write(`<body style="margin:0;background:#020617;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="${dataUrl}" style="max-width:100%;height:auto;box-shadow:0 0 20px rgba(0,0,0,0.5);"><p style="position:fixed;top:10px;color:white;font-family:sans-serif;font-size:12px;background:rgba(0,0,0,0.5);padding:8px 15px;border-radius:10px;">Mantén presionado para Guardar o Compartir</p></body>`);
+                    } else {
+                        alert("Por favor, permite las ventanas emergentes para ver la imagen.");
+                    }
+                    return;
+                }
+
+                canvas.toBlob(async (blob) => {
+                    const file = new File([blob], `Plan_${currentStudent.full_name}.png`, { type: 'image/png' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({ files: [file], title: 'Plan Nutricional' });
+                    } else {
+                        const link = document.createElement('a');
+                        link.download = `Plan_${currentStudent.full_name}_${currentMode === 'rutina' ? 'Rutina' : currentPlanDate}.png`;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    }
+                });
+            } catch (err) { 
+                console.error("Error imagen:", err); 
+                if (tempDiv && tempDiv.parentElement) document.body.removeChild(tempDiv);
             }
         }
 
@@ -2159,10 +3549,12 @@
         function toggleSidebar() {
             if (window.innerWidth >= 768) return;
             const sidebar = document.getElementById('main-sidebar');
+            
             const overlay = document.getElementById('sidebar-overlay');
             const isHidden = sidebar.classList.contains('-translate-x-full');
 
             if (isHidden) {
+                sidebar.classList.remove('hidden');
                 sidebar.classList.remove('-translate-x-full');
                 overlay.classList.remove('hidden');
                 document.body.classList.add('overflow-hidden');
