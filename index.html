@@ -1938,13 +1938,20 @@
             searchTimeout = setTimeout(async () => {
                 const currentSearchId = ++lastSearchId;
 
-                // Ahora buscamos en la nueva tabla 'biblioteca_alimentos'
-                const { data, error } = await _supabase
-                    .from('biblioteca_alimentos')
-                    .select('*')
-                    .ilike('Alimento', `%${searchTerm}%`)
-                    // Aquí buscamos en la biblioteca global
-                    .limit(10);
+                // Intentamos usar la función de búsqueda difusa primero (tolerancia a acentos y errores)
+                let { data, error } = await _supabase.rpc('buscar_alimentos_difuso', { termino: searchTerm });
+                
+                // Si la función falla (ej. si no se ha ejecutado el SQL en Supabase aún), usamos el método tradicional
+                if (error) {
+                    console.warn("Búsqueda difusa no disponible o falló:", error.message || error);
+                    const fallback = await _supabase
+                        .from('biblioteca_alimentos')
+                        .select('*')
+                        .ilike('Alimento', `%${searchTerm}%`)
+                        .limit(10);
+                    data = fallback.data;
+                    error = fallback.error;
+                }
                 
                 if (error) {
                     console.error("Error en la búsqueda de Supabase:", error);
