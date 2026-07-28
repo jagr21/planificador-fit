@@ -2332,7 +2332,12 @@
 
         // Función auxiliar para renderizar las tarjetas (limpieza de código)
         function renderMealCards(meals, container) {
-            container.innerHTML = meals.sort((a,b) => (a.sorting_order || 0) - (b.sorting_order || 0)).map((meal, idx) => {
+            container.innerHTML = meals.sort((a, b) => {
+                const timeA = a.scheduled_time === 'Sin horario' ? '23:59:59' : a.scheduled_time;
+                const timeB = b.scheduled_time === 'Sin horario' ? '23:59:59' : b.scheduled_time;
+                if (timeA !== timeB) return timeA.localeCompare(timeB);
+                return (a.sorting_order || 99) - (b.sorting_order || 99);
+            }).map((meal, idx) => {
                 const pTot = meal.meal_items.reduce((s, i) => s + (i.protein || 0), 0); 
                 const cTot = meal.meal_items.reduce((s, i) => s + (i.carbs || 0), 0);
                 const gTot = meal.meal_items.reduce((s, i) => s + (i.fat || 0), 0);
@@ -2890,7 +2895,12 @@
                         sorting_order: mealOrderMap[mName] || 99,
                         scheduled_time: groupedMeals[mName][0].hora_sugerida || 'Sin horario',
                         items: groupedMeals[mName]
-                    })).sort((a, b) => a.sorting_order - b.sorting_order);
+                    })).sort((a, b) => {
+                        const timeA = a.scheduled_time === 'Sin horario' ? '23:59:59' : a.scheduled_time;
+                        const timeB = b.scheduled_time === 'Sin horario' ? '23:59:59' : b.scheduled_time;
+                        if (timeA !== timeB) return timeA.localeCompare(timeB);
+                        return a.sorting_order - b.sorting_order;
+                    });
 
                     html += `
                         <div style="${d > 1 ? 'page-break-before: always;' : ''} margin-bottom: 40px; border-top: ${d > 1 ? `2px dashed ${borderColor}` : 'none'}; padding-top: ${d > 1 ? '30px' : '0'};">
@@ -3226,7 +3236,12 @@
                         sorting_order: mealOrderMap[mName] || 99,
                         scheduled_time: groupedMeals[mName][0].hora_sugerida || 'Sin horario',
                         items: groupedMeals[mName]
-                    })).sort((a, b) => a.sorting_order - b.sorting_order);
+                    })).sort((a, b) => {
+                        const timeA = a.scheduled_time === 'Sin horario' ? '23:59:59' : a.scheduled_time;
+                        const timeB = b.scheduled_time === 'Sin horario' ? '23:59:59' : b.scheduled_time;
+                        if (timeA !== timeB) return timeA.localeCompare(timeB);
+                        return a.sorting_order - b.sorting_order;
+                    });
 
                     if (orderedMeals.length > 0) {
                         text += `*🍴 MENÚ DEL DÍA*\n`;
@@ -3371,7 +3386,12 @@
                         sorting_order: mealOrderMap[mName] || 99,
                         scheduled_time: groupedMeals[mName][0].hora_sugerida || 'Sin horario',
                         items: groupedMeals[mName]
-                    })).sort((a, b) => a.sorting_order - b.sorting_order);
+                    })).sort((a, b) => {
+                        const timeA = a.scheduled_time === 'Sin horario' ? '23:59:59' : a.scheduled_time;
+                        const timeB = b.scheduled_time === 'Sin horario' ? '23:59:59' : b.scheduled_time;
+                        if (timeA !== timeB) return timeA.localeCompare(timeB);
+                        return a.sorting_order - b.sorting_order;
+                    });
 
                     html += `
                         <div style="margin-bottom: 40px; border-top: ${d > 1 ? `2px dashed ${borderColor}` : 'none'}; padding-top: ${d > 1 ? '30px' : '0'};">
