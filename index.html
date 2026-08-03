@@ -1030,6 +1030,34 @@
                     </div>
                     <p class="text-[10px] text-slate-600 italic px-2">El logo se ajustará automáticamente a un tamaño óptimo.</p>
                 </div>
+
+                <!-- OPCIÓN DE MARCA DE AGUA (FONDO CON LOGO) -->
+                <div class="space-y-3 pt-3 border-t border-white/10">
+                    <div class="flex items-center justify-between px-2">
+                        <div>
+                            <label class="text-xs font-black uppercase tracking-wider text-slate-300">Fondo con Logo (Marca de Agua)</label>
+                            <p class="text-[10px] text-slate-500">Logo centrado de fondo, tenue y elegante</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="pdf-watermark-toggle" class="sr-only peer" onchange="togglePdfWatermark(this.checked)">
+                            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-lime-400"></div>
+                        </label>
+                    </div>
+                    
+                    <div id="watermark-options" class="hidden space-y-3 bg-white/5 p-4 rounded-2xl border border-white/5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-400 font-bold">Intensidad del Fondo:</span>
+                            <span id="watermark-opacity-label" class="text-lime-400 font-mono font-bold">5% (Elegante)</span>
+                        </div>
+                        <input type="range" id="watermark-opacity-slider" min="2" max="15" value="5" step="1" oninput="updateWatermarkOpacity(this.value)" class="w-full accent-lime-400 bg-slate-800 rounded-lg h-2 cursor-pointer">
+                        <div class="flex justify-between text-[9px] text-slate-500 font-bold uppercase">
+                            <span>Sutil (2%)</span>
+                            <span>Elegante (5%)</span>
+                            <span>Marcado (15%)</span>
+                        </div>
+                    </div>
+                </div>
+
                 <button onclick="closeModal('modal-pdf-settings')" class="w-full accent-gradient text-slate-950 font-bold py-4 rounded-2xl shadow-lg mt-4">Listo</button>
             </div>
         </div>
@@ -1117,13 +1145,29 @@
         // Configuración de PDF persistente
         let coachPdfSettings = {
             theme: 'light',
-            logoUrl: ''
+            logoUrl: '',
+            watermark: false,
+            watermarkOpacity: 5
         };
+
+        // Cargar inmediatamente desde LocalStorage para evitar parpadeos
+        try {
+            const cachedSettings = localStorage.getItem('coach_pdf_settings');
+            if (cachedSettings) {
+                const parsed = JSON.parse(cachedSettings);
+                if (parsed.theme) coachPdfSettings.theme = parsed.theme;
+                if (parsed.logoUrl) coachPdfSettings.logoUrl = parsed.logoUrl;
+                if (parsed.watermark !== undefined) coachPdfSettings.watermark = parsed.watermark;
+                if (parsed.watermarkOpacity !== undefined) coachPdfSettings.watermarkOpacity = parsed.watermarkOpacity;
+            }
+        } catch(e) { console.warn("Error leyendo settings de localStorage", e); }
 
         function setPdfTheme(theme) {
             coachPdfSettings.theme = theme;
-            document.getElementById('theme-btn-light').className = theme === 'light' ? 'p-4 rounded-2xl border-2 border-lime-400 bg-white text-slate-900 font-bold text-sm' : 'p-4 rounded-2xl border-2 border-slate-800 bg-slate-100 text-slate-400 font-bold text-sm opacity-50';
-            document.getElementById('theme-btn-dark').className = theme === 'dark' ? 'p-4 rounded-2xl border-2 border-lime-400 bg-slate-900 text-white font-bold text-sm' : 'p-4 rounded-2xl border-2 border-slate-800 bg-slate-900 text-slate-500 font-bold text-sm opacity-50';
+            const btnLight = document.getElementById('theme-btn-light');
+            const btnDark = document.getElementById('theme-btn-dark');
+            if (btnLight) btnLight.className = theme === 'light' ? 'p-4 rounded-2xl border-2 border-lime-400 bg-white text-slate-900 font-bold text-sm' : 'p-4 rounded-2xl border-2 border-slate-800 bg-slate-100 text-slate-400 font-bold text-sm opacity-50';
+            if (btnDark) btnDark.className = theme === 'dark' ? 'p-4 rounded-2xl border-2 border-lime-400 bg-slate-900 text-white font-bold text-sm' : 'p-4 rounded-2xl border-2 border-slate-800 bg-slate-900 text-slate-500 font-bold text-sm opacity-50';
             saveCoachPreferences();
         }
 
@@ -1137,14 +1181,14 @@
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 150;
+                    const MAX_WIDTH = 250;
                     const scaleSize = MAX_WIDTH / img.width;
                     canvas.width = MAX_WIDTH;
                     canvas.height = img.height * scaleSize;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     
-                    const resizedBase64 = canvas.toDataURL('image/webp', 0.8);
+                    const resizedBase64 = canvas.toDataURL('image/webp', 0.85);
                     coachPdfSettings.logoUrl = resizedBase64;
                     updateLogoUIPref(resizedBase64);
                     saveCoachPreferences();
@@ -1160,70 +1204,133 @@
             const actionBtns = document.getElementById('logo-action-buttons');
 
             if (url) {
-                preview.src = url; preview.classList.remove('hidden');
-                pdfLogo.src = url;
-                actionBtns.classList.remove('hidden');
+                if (preview) { preview.src = url; preview.classList.remove('hidden'); }
+                if (pdfLogo) { pdfLogo.src = url; }
+                if (actionBtns) { actionBtns.classList.remove('hidden'); }
             } else {
-                preview.src = ""; preview.classList.add('hidden');
-                pdfLogo.src = "";
-                actionBtns.classList.add('hidden');
+                if (preview) { preview.src = ""; preview.classList.add('hidden'); }
+                if (pdfLogo) { pdfLogo.src = ""; }
+                if (actionBtns) { actionBtns.classList.add('hidden'); }
             }
+            updateWatermarkUI();
+        }
+
+        function updateWatermarkUI() {
+            const toggle = document.getElementById('pdf-watermark-toggle');
+            const options = document.getElementById('watermark-options');
+            const slider = document.getElementById('watermark-opacity-slider');
+            const label = document.getElementById('watermark-opacity-label');
+
+            if (toggle) toggle.checked = !!coachPdfSettings.watermark;
+            if (options) {
+                if (coachPdfSettings.watermark && coachPdfSettings.logoUrl) {
+                    options.classList.remove('hidden');
+                } else {
+                    options.classList.add('hidden');
+                }
+            }
+            if (slider) slider.value = coachPdfSettings.watermarkOpacity || 5;
+            if (label) {
+                const val = coachPdfSettings.watermarkOpacity || 5;
+                let desc = 'Muy Tenue';
+                if (val <= 3) desc = 'Sutil';
+                else if (val <= 7) desc = 'Elegante';
+                else desc = 'Visible';
+                label.innerText = `${val}% (${desc})`;
+            }
+        }
+
+        function togglePdfWatermark(checked) {
+            if (checked && !coachPdfSettings.logoUrl) {
+                alert("Primero debes subir un logo para activar la marca de agua.");
+                const toggle = document.getElementById('pdf-watermark-toggle');
+                if (toggle) toggle.checked = false;
+                return;
+            }
+            coachPdfSettings.watermark = checked;
+            updateWatermarkUI();
+            saveCoachPreferences();
+        }
+
+        function updateWatermarkOpacity(val) {
+            coachPdfSettings.watermarkOpacity = parseInt(val) || 5;
+            updateWatermarkUI();
+            saveCoachPreferences();
         }
 
         async function deleteCoachLogo() {
             if (!confirm("¿Seguro que quieres eliminar el logo?")) return;
             coachPdfSettings.logoUrl = '';
+            coachPdfSettings.watermark = false;
             updateLogoUIPref('');
+            updateWatermarkUI();
             await saveCoachPreferences();
         }
 
         async function saveCoachPreferences() {
+            // 1. Guardar siempre en LocalStorage (inmediato y persistente)
+            try {
+                localStorage.setItem('coach_pdf_settings', JSON.stringify(coachPdfSettings));
+            } catch(e) { console.warn("Error guardando settings en localStorage", e); }
+
+            // 2. Guardar en Supabase en el perfil del usuario actual (no de los alumnos)
             const { data: userData } = await _supabase.auth.getUser();
             if (!userData?.user) return;
             
-            // Buscamos el perfil del coach para guardar sus preferencias
-            await _supabase.from('profiles')
-                .update({ 
-                    pdf_theme: coachPdfSettings.theme,
-                    logo_url: coachPdfSettings.logoUrl 
-                })
-                .eq('coach_id', userData.user.id)
-                .eq('role', 'admin'); // O 'coach' según tu lógica
+            try {
+                await _supabase.from('profiles')
+                    .update({ 
+                        pdf_theme: coachPdfSettings.theme,
+                        logo_url: coachPdfSettings.logoUrl 
+                    })
+                    .eq('coach_id', userData.user.id)
+                    .neq('role', 'alumno');
+            } catch (err) {
+                console.warn("Error actualizando perfil en Supabase:", err);
+            }
         }
         
         // --- SISTEMA DE ADMINISTRACIÓN ---
         async function checkAdminStatus() {
+            // Aplicar configuraciones guardadas en memoria / localstorage a la UI
+            setPdfTheme(coachPdfSettings.theme);
+            updateLogoUIPref(coachPdfSettings.logoUrl);
+            updateWatermarkUI();
+
             const { data: authData } = await _supabase.auth.getUser();
             if (!authData?.user) return;
 
-            // Cargar preferencias del coach
-            const { data: coachProfile } = await _supabase
+            // Cargar preferencias del coach desde Supabase (perfil del coach/user, no alumno)
+            const { data: coachProfiles, error } = await _supabase
                 .from('profiles')
-                .select('pdf_theme, logo_url')
+                .select('pdf_theme, logo_url, role')
                 .eq('coach_id', authData.user.id)
-                .maybeSingle(); // Usamos maybeSingle para evitar errores si no existe aún
-            if (coachProfile) {
-                coachPdfSettings.theme = coachProfile.pdf_theme || 'light';
-                coachPdfSettings.logoUrl = coachProfile.logo_url || '';
-                setPdfTheme(coachPdfSettings.theme);
-                updateLogoUIPref(coachPdfSettings.logoUrl);
-            }
-
-            // Comprobamos si el perfil asociado al coach actual tiene rol 'admin'
-            const { data, error } = await _supabase
-                .from('profiles')
-                .select('role')
-                .eq('coach_id', authData.user.id)
-                .eq('role', 'admin')
+                .neq('role', 'alumno')
                 .limit(1);
 
-            if (data && data.length > 0) {
+            const coachProfile = coachProfiles && coachProfiles.length > 0 ? coachProfiles[0] : null;
+            if (coachProfile) {
+                if (coachProfile.pdf_theme) coachPdfSettings.theme = coachProfile.pdf_theme;
+                if (coachProfile.logo_url) coachPdfSettings.logoUrl = coachProfile.logo_url;
+                setPdfTheme(coachPdfSettings.theme);
+                updateLogoUIPref(coachPdfSettings.logoUrl);
+                updateWatermarkUI();
+                try {
+                    localStorage.setItem('coach_pdf_settings', JSON.stringify(coachPdfSettings));
+                } catch(e) {}
+            }
+
+            // Comprobamos si el perfil asociado al usuario tiene rol 'admin'
+            if (coachProfile && coachProfile.role === 'admin') {
                 isAdmin = true;
-                document.getElementById('admin-section').classList.remove('hidden');
+                const adminSection = document.getElementById('admin-section');
+                if (adminSection) adminSection.classList.remove('hidden');
                 const btnLib = document.getElementById('btn-add-to-library');
                 if (btnLib) btnLib.classList.remove('hidden');
                 lucide.createIcons();
-            } else { isAdmin = false; }
+            } else { 
+                isAdmin = false; 
+            }
         }
 
         async function openAdminPanel() {
@@ -1748,6 +1855,18 @@
             lucide.createIcons(); // Recargar iconos para refrescar Lucide
         }
 
+        function sortNotesList(notesArray) {
+            return (notesArray || []).sort((a, b) => {
+                const ordA = (a.orden !== undefined && a.orden !== null) ? a.orden : 0;
+                const ordB = (b.orden !== undefined && b.orden !== null) ? b.orden : 0;
+                if (ordA !== ordB && ordA !== 0 && ordB !== 0) return ordA - ordB;
+                if (ordA !== 0 && ordB === 0) return -1;
+                if (ordA === 0 && ordB !== 0) return 1;
+                if (a.created_at && b.created_at) return new Date(a.created_at) - new Date(b.created_at);
+                return (String(a.id) > String(b.id) ? 1 : -1);
+            });
+        }
+
         async function fetchAllRoutineData(studentId) {
             const [mealsRes, suppsRes, notesRes] = await Promise.all([
                 _supabase.from('comidas').select('*').eq('alumno_id', studentId).not('dia_rutina', 'is', null),
@@ -1757,7 +1876,7 @@
             return {
                 meals: mealsRes.data || [],
                 supplements: suppsRes.data || [],
-                notes: notesRes.data || []
+                notes: sortNotesList(notesRes.data || [])
             };
         }
 
@@ -1798,6 +1917,11 @@
                     days[d].notes.push(item);
                 }
             });
+
+            // Ordenar las notas de cada día
+            for (let d = 1; d <= totalDays; d++) {
+                days[d].notes = sortNotesList(days[d].notes);
+            }
             
             return days;
         }
@@ -2446,24 +2570,65 @@
             }
         }
 
+        let currentNotesList = [];
+
         function renderNotes(notes) {
             const container = document.getElementById('notes-container');
             if (!notes || notes.length === 0) {
+                currentNotesList = [];
                 container.innerHTML = '<p class="text-slate-500 text-xs italic p-4 text-center border border-dashed border-white/5 rounded-2xl">Sin notas para hoy</p>';
                 return;
             }
-            container.innerHTML = notes.map(n => `
+
+            currentNotesList = sortNotesList([...notes]);
+
+            container.innerHTML = currentNotesList.map((n, idx) => `
                 <div class="relative group">
                     <p class="text-slate-400 text-sm leading-relaxed italic bg-slate-900/50 p-4 rounded-2xl border border-white/5 mb-3">
                         "${n.contenido}"
                     </p>
-                    <div class="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity no-export">
-                        <button onclick='editNote(${JSON.stringify(n).replace(/'/g, "&apos;")})' class="p-1 bg-slate-800 rounded-lg hover:text-white transition-colors"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
-                        <button onclick="deleteNote('${n.id}')" class="p-1 bg-slate-800 rounded-lg hover:text-rose-500 transition-colors"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                    <div class="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-export bg-slate-900/90 p-1 rounded-xl border border-white/10 shadow-lg backdrop-blur-md">
+                        ${idx > 0 ? `<button onclick="moveNote('${n.id}', -1)" title="Subir nota" class="p-1 text-slate-400 hover:text-lime-400 hover:bg-white/10 rounded-lg transition-colors"><i data-lucide="chevron-up" class="w-3.5 h-3.5"></i></button>` : ''}
+                        ${idx < currentNotesList.length - 1 ? `<button onclick="moveNote('${n.id}', 1)" title="Bajar nota" class="p-1 text-slate-400 hover:text-lime-400 hover:bg-white/10 rounded-lg transition-colors"><i data-lucide="chevron-down" class="w-3.5 h-3.5"></i></button>` : ''}
+                        <button onclick='editNote(${JSON.stringify(n).replace(/'/g, "&apos;")})' title="Editar nota" class="p-1 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="deleteNote('${n.id}')" title="Eliminar nota" class="p-1 text-slate-400 hover:text-rose-500 hover:bg-white/10 rounded-lg transition-colors"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                     </div>
                 </div>
             `).join('');
             lucide.createIcons();
+        }
+
+        async function moveNote(id, direction) {
+            const currentIndex = currentNotesList.findIndex(n => n.id === id);
+            if (currentIndex === -1) return;
+            const targetIndex = currentIndex + direction;
+            if (targetIndex < 0 || targetIndex >= currentNotesList.length) return;
+
+            // Reasignar órdenes asegurando valores consecutivos
+            currentNotesList.forEach((n, idx) => {
+                n.orden = idx + 1;
+            });
+
+            const itemA = currentNotesList[currentIndex];
+            const itemB = currentNotesList[targetIndex];
+
+            const tempOrden = itemA.orden;
+            itemA.orden = itemB.orden;
+            itemB.orden = tempOrden;
+
+            // Ordenar y re-renderizar de inmediato para una respuesta visual instantánea
+            currentNotesList = sortNotesList(currentNotesList);
+            renderNotes(currentNotesList);
+
+            // Persistir los nuevos órdenes en Supabase
+            try {
+                const updates = currentNotesList.map((n, idx) => 
+                    _supabase.from('notas').update({ orden: idx + 1 }).eq('id', n.id)
+                );
+                await Promise.all(updates);
+            } catch (err) {
+                console.warn("Error guardando orden de notas en Supabase:", err);
+            }
         }
 
         function editNote(n) {
@@ -2510,6 +2675,8 @@
             e.preventDefault();
             if (!selectedStudentId) return alert("Selecciona un alumno primero");
 
+            const maxOrden = (currentNotesList || []).reduce((max, n) => Math.max(max, n.orden || 0), 0);
+
             const data = {
                 alumno_id: selectedStudentId,
                 fecha: currentMode === 'rutina' ? null : currentPlanDate,
@@ -2519,8 +2686,12 @@
 
             const id = document.getElementById('note-id-input').value;
             let result;
-            if (id) result = await _supabase.from('notas').update(data).eq('id', id);
-            else result = await _supabase.from('notas').insert([data]);
+            if (id) {
+                result = await _supabase.from('notas').update(data).eq('id', id);
+            } else {
+                data.orden = maxOrden + 1;
+                result = await _supabase.from('notas').insert([data]);
+            }
 
             if (result.error) alert("Error: " + result.error.message);
             else {
@@ -2851,6 +3022,18 @@
             const borderColor = isDark ? '#1e293b' : '#e2e8f0';
             const coachName = document.getElementById('display-coach-name').innerText || 'Coach';
 
+            const isWatermarkActive = !!coachPdfSettings.watermark && !!coachPdfSettings.logoUrl;
+            const watermarkOpacity = (coachPdfSettings.watermarkOpacity || 5) / 100;
+            
+            const getWatermarkHtml = () => {
+                if (!isWatermarkActive) return '';
+                return `
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: ${watermarkOpacity}; pointer-events: none; z-index: 0; width: 440px; max-width: 80%; display: flex; align-items: center; justify-content: center; text-align: center;">
+                        <img src="${coachPdfSettings.logoUrl}" style="width: 100%; max-height: 440px; object-fit: contain; ${isDark ? 'filter: brightness(1.2);' : ''}">
+                    </div>
+                `;
+            };
+
             const pdfContainer = document.createElement('div');
             pdfContainer.style.padding = '35px';
             pdfContainer.style.color = textColor;
@@ -2903,39 +3086,41 @@
                     });
 
                     html += `
-                        <div style="${d > 1 ? 'page-break-before: always;' : ''} margin-bottom: 40px; border-top: ${d > 1 ? `2px dashed ${borderColor}` : 'none'}; padding-top: ${d > 1 ? '30px' : '0'};">
-                            <h2 style="font-size: 24px; font-weight: 900; margin-bottom: 20px; color: #bef264; text-transform: uppercase;">
-                                DÍA ${d}
-                            </h2>
-                            
-                            <div style="display: flex; gap: 20px; margin-bottom: 30px;">
-                                <div style="flex: 1.8; background: ${cardBg}; padding: 20px; border-radius: 20px; border: 1px solid ${borderColor};">
-                                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
-                                        <span style="font-size: 10px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase;">Consumo Energético</span>
-                                        <span style="font-size: 18px; font-weight: 800;">${kcalRaw} <span style="font-size: 11px; color: ${secondaryTextColor}; font-weight: 400;">/ ${targetKcal} kcal</span></span>
+                        <div style="position: relative; overflow: hidden; border-radius: 20px; ${d > 1 ? 'page-break-before: always;' : ''} margin-bottom: 40px; border-top: ${d > 1 ? `2px dashed ${borderColor}` : 'none'}; padding-top: ${d > 1 ? '30px' : '0'};">
+                            ${getWatermarkHtml()}
+                            <div style="position: relative; z-index: 1;">
+                                <h2 style="font-size: 24px; font-weight: 900; margin-bottom: 20px; color: #bef264; text-transform: uppercase;">
+                                    DÍA ${d}
+                                </h2>
+                                
+                                <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+                                    <div style="flex: 1.8; background: ${cardBg}; padding: 20px; border-radius: 20px; border: 1px solid ${borderColor};">
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+                                            <span style="font-size: 10px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase;">Consumo Energético</span>
+                                            <span style="font-size: 18px; font-weight: 800;">${kcalRaw} <span style="font-size: 11px; color: ${secondaryTextColor}; font-weight: 400;">/ ${targetKcal} kcal</span></span>
+                                        </div>
+                                        <div style="height: 8px; background: ${isDark ? '#1e293b' : '#f1f5f9'}; border-radius: 10px; overflow: hidden; margin-bottom: 20px;">
+                                            <div style="height: 100%; width: ${kcalPct}%; background: linear-gradient(90deg, #bef264, #65a30d); border-radius: 10px;"></div>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <div style="text-align: center; flex: 1;"><p style="font-size: 8px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 2px;">Proteína</p><p style="font-size: 14px; font-weight: 800; color: #3b82f6; margin:0;">${Math.round(dayData.p)}g</p></div>
+                                            <div style="text-align: center; flex: 1;"><p style="font-size: 8px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 2px;">Carbohidratos</p><p style="font-size: 14px; font-weight: 800; color: #f59e0b; margin:0;">${Math.round(dayData.c)}g</p></div>
+                                            <div style="text-align: center; flex: 1;"><p style="font-size: 8px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 2px;">Grasas</p><p style="font-size: 14px; font-weight: 800; color: #ef4444; margin:0;">${Math.round(dayData.g)}g</p></div>
+                                            <div style="text-align: center; flex: 1;"><p style="font-size: 8px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 2px;">Fibra</p><p style="font-size: 14px; font-weight: 800; color: #10b981; margin:0;">${Math.round(dayData.f)}g</p></div>
+                                        </div>
                                     </div>
-                                    <div style="height: 8px; background: ${isDark ? '#1e293b' : '#f1f5f9'}; border-radius: 10px; overflow: hidden; margin-bottom: 20px;">
-                                        <div style="height: 100%; width: ${kcalPct}%; background: linear-gradient(90deg, #bef264, #65a30d); border-radius: 10px;"></div>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between;">
-                                        <div style="text-align: center; flex: 1;"><p style="font-size: 8px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 2px;">Proteína</p><p style="font-size: 14px; font-weight: 800; color: #3b82f6; margin:0;">${Math.round(dayData.p)}g</p></div>
-                                        <div style="text-align: center; flex: 1;"><p style="font-size: 8px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 2px;">Carbohidratos</p><p style="font-size: 14px; font-weight: 800; color: #f59e0b; margin:0;">${Math.round(dayData.c)}g</p></div>
-                                        <div style="text-align: center; flex: 1;"><p style="font-size: 8px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 2px;">Grasas</p><p style="font-size: 14px; font-weight: 800; color: #ef4444; margin:0;">${Math.round(dayData.g)}g</p></div>
-                                        <div style="text-align: center; flex: 1;"><p style="font-size: 8px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 2px;">Fibra</p><p style="font-size: 14px; font-weight: 800; color: #10b981; margin:0;">${Math.round(dayData.f)}g</p></div>
+                                    <div style="flex: 1; background: ${isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc'}; padding: 20px; border-radius: 20px; border: 1px solid ${borderColor}; display: flex; flex-direction: column; justify-content: center; text-align: center;">
+                                        <p style="font-size: 9px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 4px;">Objetivo</p>
+                                        <p style="font-size: 12px; font-weight: 800; color: #bef264; text-transform: uppercase; margin: 0;">${currentStudent.objective || 'Mantenimiento'}</p>
+                                        <div style="height: 1px; background: ${borderColor}; margin: 10px 0;"></div>
+                                        <div style="display: flex; justify-content: space-around;">
+                                            <div><p style="font-size: 14px; font-weight: 800; margin:0;">${currentStudent.current_weight}kg</p><p style="font-size: 8px; color: ${secondaryTextColor};">PESO</p></div>
+                                            <div><p style="font-size: 14px; font-weight: 800; margin:0;">${currentStudent.age}</p><p style="font-size: 8px; color: ${secondaryTextColor};">EDAD</p></div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div style="flex: 1; background: ${isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc'}; padding: 20px; border-radius: 20px; border: 1px solid ${borderColor}; display: flex; flex-direction: column; justify-content: center; text-align: center;">
-                                    <p style="font-size: 9px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 4px;">Objetivo</p>
-                                    <p style="font-size: 12px; font-weight: 800; color: #bef264; text-transform: uppercase; margin: 0;">${currentStudent.objective || 'Mantenimiento'}</p>
-                                    <div style="height: 1px; background: ${borderColor}; margin: 10px 0;"></div>
-                                    <div style="display: flex; justify-content: space-around;">
-                                        <div><p style="font-size: 14px; font-weight: 800; margin:0;">${currentStudent.current_weight}kg</p><p style="font-size: 8px; color: ${secondaryTextColor};">PESO</p></div>
-                                        <div><p style="font-size: 14px; font-weight: 800; margin:0;">${currentStudent.age}</p><p style="font-size: 8px; color: ${secondaryTextColor};">EDAD</p></div>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 15px; color: ${textColor};">🍴 Plan de Comidas - Día ${d}</h3>
+                                <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 15px; color: ${textColor};">🍴 Plan de Comidas - Día ${d}</h3>
                     `;
 
                     if (orderedMeals.length === 0) {
@@ -2998,7 +3183,7 @@
 
                         html += `<div style="flex: 1;">`;
                         if (dayData.notes.length > 0) {
-                            html += `<h4 style="font-size: 13px; font-weight: 800; color: #secondaryTextColor; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">📝 Notas Estratégicas</h4>`;
+                            html += `<h4 style="font-size: 13px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">📝 Notas Estratégicas</h4>`;
                             dayData.notes.forEach(n => {
                                 html += `
                                     <div style="background: ${isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc'}; border: 1px solid ${borderColor}; padding: 10px 12px; border-radius: 12px; margin-bottom: 6px; font-style: italic; font-size: 10px; line-height: 1.4; color: ${secondaryTextColor};">
@@ -3010,7 +3195,7 @@
                         html += `</div></div>`;
                     }
                     
-                    html += `</div>`;
+                    html += `</div></div>`;
                 }
 
                 html += `
@@ -3032,46 +3217,49 @@
                 const kcalPct = Math.min(100, Math.round((kcalNum / targetKcal) * 100));
 
                 html += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px;">
-                        <div>
-                            <p style="font-size: 10px; font-weight: 800; color: #bef264; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 2px;">Informe Nutricional</p>
-                            <h1 style="font-size: 32px; font-weight: 800; margin: 0; letter-spacing: -1.5px; color: ${textColor};">${name}</h1>
-                            <p style="font-size: 13px; color: ${secondaryTextColor}; margin-top: 4px;">Por <b>${coachName}</b> • ${date}</p>
-                        </div>
-                        ${coachPdfSettings.logoUrl ? `<img src="${coachPdfSettings.logoUrl}" style="max-width: 120px; max-height: 80px; object-fit: contain;">` : '<div style="width: 40px; height: 40px; background: #bef264; border-radius: 12px;"></div>'}
-                    </div>
+                    <div style="position: relative; overflow: hidden; border-radius: 24px;">
+                        ${getWatermarkHtml()}
+                        <div style="position: relative; z-index: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px;">
+                                <div>
+                                    <p style="font-size: 10px; font-weight: 800; color: #bef264; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 2px;">Informe Nutricional</p>
+                                    <h1 style="font-size: 32px; font-weight: 800; margin: 0; letter-spacing: -1.5px; color: ${textColor};">${name}</h1>
+                                    <p style="font-size: 13px; color: ${secondaryTextColor}; margin-top: 4px;">Por <b>${coachName}</b> • ${date}</p>
+                                </div>
+                                ${coachPdfSettings.logoUrl ? `<img src="${coachPdfSettings.logoUrl}" style="max-width: 120px; max-height: 80px; object-fit: contain;">` : '<div style="width: 40px; height: 40px; background: #bef264; border-radius: 12px;"></div>'}
+                            </div>
 
-                    <div style="display: flex; gap: 20px; margin-bottom: 40px;">
-                        <div style="flex: 1.8; background: ${cardBg}; padding: 25px; border-radius: 24px; border: 1px solid ${borderColor}; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px;">
-                                <span style="font-size: 11px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase;">Consumo Energético</span>
-                                <span style="font-size: 20px; font-weight: 800;">${kcalRaw} <span style="font-size: 12px; color: ${secondaryTextColor}; font-weight: 400;">/ ${targetKcal} kcal</span></span>
-                            </div>
-                            <div style="height: 10px; background: ${isDark ? '#1e293b' : '#f1f5f9'}; border-radius: 10px; overflow: hidden; margin-bottom: 25px;">
-                                <div style="height: 100%; width: ${kcalPct}%; background: linear-gradient(90deg, #bef264, #65a30d); border-radius: 10px;"></div>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <div style="text-align: center; flex: 1;"><p style="font-size: 9px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 4px;">Proteína</p><p style="font-size: 15px; font-weight: 800; color: #3b82f6; margin:0;">${p}</p></div>
-                                <div style="text-align: center; flex: 1;"><p style="font-size: 9px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 4px;">Carbohidratos</p><p style="font-size: 15px; font-weight: 800; color: #f59e0b; margin:0;">${c}</p></div>
-                                <div style="text-align: center; flex: 1;"><p style="font-size: 9px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 4px;">Grasas</p><p style="font-size: 15px; font-weight: 800; color: #ef4444; margin:0;">${g}</p></div>
-                                <div style="text-align: center; flex: 1;"><p style="font-size: 9px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 4px;">Fibra</p><p style="font-size: 15px; font-weight: 800; color: #10b981; margin:0;">${f}</p></div>
-                            </div>
-                        </div>
+                            <div style="display: flex; gap: 20px; margin-bottom: 40px;">
+                                <div style="flex: 1.8; background: ${cardBg}; padding: 25px; border-radius: 24px; border: 1px solid ${borderColor}; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px;">
+                                        <span style="font-size: 11px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase;">Consumo Energético</span>
+                                        <span style="font-size: 20px; font-weight: 800;">${kcalRaw} <span style="font-size: 12px; color: ${secondaryTextColor}; font-weight: 400;">/ ${targetKcal} kcal</span></span>
+                                    </div>
+                                    <div style="height: 10px; background: ${isDark ? '#1e293b' : '#f1f5f9'}; border-radius: 10px; overflow: hidden; margin-bottom: 25px;">
+                                        <div style="height: 100%; width: ${kcalPct}%; background: linear-gradient(90deg, #bef264, #65a30d); border-radius: 10px;"></div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <div style="text-align: center; flex: 1;"><p style="font-size: 9px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 4px;">Proteína</p><p style="font-size: 15px; font-weight: 800; color: #3b82f6; margin:0;">${p}</p></div>
+                                        <div style="text-align: center; flex: 1;"><p style="font-size: 9px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 4px;">Carbohidratos</p><p style="font-size: 15px; font-weight: 800; color: #f59e0b; margin:0;">${c}</p></div>
+                                        <div style="text-align: center; flex: 1;"><p style="font-size: 9px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 4px;">Grasas</p><p style="font-size: 15px; font-weight: 800; color: #ef4444; margin:0;">${g}</p></div>
+                                        <div style="text-align: center; flex: 1;"><p style="font-size: 9px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 4px;">Fibra</p><p style="font-size: 15px; font-weight: 800; color: #10b981; margin:0;">${f}</p></div>
+                                    </div>
+                                </div>
 
-                        <div style="flex: 1; background: ${isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc'}; padding: 25px; border-radius: 24px; border: 1px solid ${borderColor}; display: flex; flex-direction: column; justify-content: center;">
-                            <p style="font-size: 10px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 8px; text-align: center;">Objetivo Actual</p>
-                            <p style="font-size: 14px; font-weight: 800; text-align: center; color: #bef264; text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">${currentStudent.objective || 'Mantenimiento'}</p>
-                            <div style="height: 1px; background: ${borderColor}; margin: 15px 0;"></div>
-                            <div style="display: flex; justify-content: space-around; text-align: center;">
-                                <div><p style="font-size: 16px; font-weight: 800; margin:0;">${currentStudent.current_weight}kg</p><p style="font-size: 9px; color: ${secondaryTextColor}; font-weight: 700;">PESO</p></div>
-                                <div><p style="font-size: 16px; font-weight: 800; margin:0;">${currentStudent.age}</p><p style="font-size: 9px; color: ${secondaryTextColor}; font-weight: 700;">EDAD</p></div>
+                                <div style="flex: 1; background: ${isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc'}; padding: 25px; border-radius: 24px; border: 1px solid ${borderColor}; display: flex; flex-direction: column; justify-content: center;">
+                                    <p style="font-size: 10px; font-weight: 800; color: ${secondaryTextColor}; text-transform: uppercase; margin-bottom: 8px; text-align: center;">Objetivo Actual</p>
+                                    <p style="font-size: 14px; font-weight: 800; text-align: center; color: #bef264; text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">${currentStudent.objective || 'Mantenimiento'}</p>
+                                    <div style="height: 1px; background: ${borderColor}; margin: 15px 0;"></div>
+                                    <div style="display: flex; justify-content: space-around; text-align: center;">
+                                        <div><p style="font-size: 16px; font-weight: 800; margin:0;">${currentStudent.current_weight}kg</p><p style="font-size: 9px; color: ${secondaryTextColor}; font-weight: 700;">PESO</p></div>
+                                        <div><p style="font-size: 16px; font-weight: 800; margin:0;">${currentStudent.age}</p><p style="font-size: 9px; color: ${secondaryTextColor}; font-weight: 700;">EDAD</p></div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 20px; color: ${textColor}; display: flex; align-items: center; gap: 10px;">
-                        <span style="color: #bef264;">✦</span> Plan de Comidas
-                    </h2>
+                            <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 20px; color: ${textColor}; display: flex; align-items: center; gap: 10px;">
+                                <span style="color: #bef264;">✦</span> Plan de Comidas
+                            </h2>
                 `;
 
                 const mealCards = document.querySelectorAll('#meal-list > div.glass-card');
@@ -3156,8 +3344,10 @@
                 html += `</div></div>`;
 
                 html += `
-                    <div style="margin-top: 50px; text-align: center; border-top: 1px solid ${borderColor}; padding-top: 20px;">
-                        <p style="font-size: 9px; color: ${secondaryTextColor}; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;">PowerPlan PRO • Gestión Nutricional de Alto Rendimiento</p>
+                            <div style="margin-top: 50px; text-align: center; border-top: 1px solid ${borderColor}; padding-top: 20px;">
+                                <p style="font-size: 9px; color: ${secondaryTextColor}; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;">PowerPlan PRO • Gestión Nutricional de Alto Rendimiento</p>
+                            </div>
+                        </div>
                     </div>
                 `;
 
