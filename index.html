@@ -322,6 +322,19 @@
                     <button type="button" onclick="addNewRoutineDay()" class="bg-lime-400/10 hover:bg-lime-400/20 text-lime-400 border border-lime-400/20 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-all no-export">
                         <i data-lucide="plus" class="w-3.5 h-3.5"></i> Agregar Día
                     </button>
+                    <div class="relative no-export" id="template-btn-container">
+                        <button onclick="toggleTemplateMenu()" class="bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-all">
+                            <i data-lucide="layout-template" class="w-3.5 h-3.5"></i> Plantillas
+                        </button>
+                        <div id="template-menu" class="hidden absolute left-0 mt-2 w-48 rounded-2xl bg-slate-900 border border-white/10 shadow-2xl z-[160] overflow-hidden">
+                            <button onclick="openModal('modal-save-template'); toggleTemplateMenu()" class="flex items-center gap-3 w-full px-4 py-3 text-[11px] font-bold text-slate-300 hover:bg-white/5 transition-colors border-b border-white/5">
+                                <i data-lucide="save" class="w-4 h-4 text-indigo-400"></i> Guardar Día Actual
+                            </button>
+                            <button onclick="openLoadTemplateModal(); toggleTemplateMenu()" class="flex items-center gap-3 w-full px-4 py-3 text-[11px] font-bold text-slate-300 hover:bg-white/5 transition-colors">
+                                <i data-lucide="folder-open" class="w-4 h-4 text-emerald-400"></i> Cargar Plantilla
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="flex gap-2">
@@ -330,13 +343,13 @@
                         <i data-lucide="share-2" class="w-4 h-4"></i> Exportar
                     </button>
                     <div id="export-menu" class="hidden absolute right-0 mt-2 w-52 rounded-2xl bg-slate-900 border border-white/10 shadow-2xl z-[160] overflow-hidden">
-                        <button onclick="exportPlanToPDF(); toggleExportMenu()" class="flex items-center gap-3 w-full px-4 py-3 text-[11px] font-bold text-slate-300 hover:bg-white/5 transition-colors border-b border-white/5">
+                        <button onclick="handleExportClick('pdf'); toggleExportMenu()" class="flex items-center gap-3 w-full px-4 py-3 text-[11px] font-bold text-slate-300 hover:bg-white/5 transition-colors border-b border-white/5">
                             <i data-lucide="file-text" class="w-4 h-4 text-lime-400"></i> Documento PDF
                         </button>
-                        <button onclick="exportToWhatsApp(); toggleExportMenu()" class="flex items-center gap-3 w-full px-4 py-3 text-[11px] font-bold text-slate-300 hover:bg-white/5 transition-colors border-b border-white/5">
+                        <button onclick="handleExportClick('whatsapp'); toggleExportMenu()" class="flex items-center gap-3 w-full px-4 py-3 text-[11px] font-bold text-slate-300 hover:bg-white/5 transition-colors border-b border-white/5">
                             <i data-lucide="message-circle" class="w-4 h-4 text-emerald-400"></i> Texto para WhatsApp
                         </button>
-                        <button onclick="exportToImage(); toggleExportMenu()" class="flex items-center gap-3 w-full px-4 py-3 text-[11px] font-bold text-slate-300 hover:bg-white/5 transition-colors">
+                        <button onclick="handleExportClick('image'); toggleExportMenu()" class="flex items-center gap-3 w-full px-4 py-3 text-[11px] font-bold text-slate-300 hover:bg-white/5 transition-colors">
                             <i data-lucide="image" class="w-4 h-4 text-blue-400"></i> Captura de Imagen
                         </button>
                     </div>
@@ -1115,6 +1128,91 @@
         </div>
     </div>
 
+    <!-- Modal Guardar Plantilla -->
+    <div id="modal-save-template" onclick="closeModal('modal-save-template')" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[150] hidden flex-col items-center justify-center p-4">
+        <div class="bg-slate-900 w-full max-w-md rounded-3xl border border-white/10 shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-slate-800/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                        <i data-lucide="save" class="w-5 h-5 text-indigo-400"></i>
+                    </div>
+                    <h3 class="text-lg font-black text-white">Guardar Plantilla</h3>
+                </div>
+                <button onclick="closeModal('modal-save-template')" class="text-slate-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-2 rounded-xl">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <p class="text-xs text-slate-400 mb-4">Guarda todas las comidas, suplementos y notas de este día para reutilizarlo luego.</p>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">Nombre de la Plantilla</label>
+                        <input type="text" id="template-name-input" placeholder="Ej: Piernas Alto en Carbos" class="w-full bg-slate-950/50 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 transition-colors">
+                    </div>
+                    <button onclick="saveCurrentDayAsTemplate()" class="w-full bg-indigo-500 hover:bg-indigo-400 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-indigo-500/20">
+                        Guardar Plantilla
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Cargar Plantilla -->
+    <div id="modal-load-template" onclick="closeModal('modal-load-template')" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[150] hidden flex-col items-center justify-center p-4">
+        <div class="bg-slate-900 w-full max-w-lg rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[80vh]" onclick="event.stopPropagation()">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-slate-800/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                        <i data-lucide="folder-open" class="w-5 h-5 text-emerald-400"></i>
+                    </div>
+                    <h3 class="text-lg font-black text-white">Cargar Plantilla</h3>
+                </div>
+                <button onclick="closeModal('modal-load-template')" class="text-slate-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-2 rounded-xl">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto" id="template-list-container">
+                <!-- Se inyectarán las plantillas aquí -->
+            </div>
+        </div>
+    </div>
+    <!-- Modal Export Day Selector -->
+    <div id="modal-export-day-selector" onclick="closeModal('modal-export-day-selector')" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-[150] hidden flex-col items-center justify-center p-4">
+        <div class="bg-slate-900 w-full max-w-sm rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col" onclick="event.stopPropagation()">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-slate-800/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-lime-500/10 flex items-center justify-center border border-lime-500/20">
+                        <i data-lucide="share-2" class="w-5 h-5 text-lime-400"></i>
+                    </div>
+                    <h3 class="text-lg font-black text-white">Exportar Rutina</h3>
+                </div>
+                <button onclick="closeModal('modal-export-day-selector')" class="text-slate-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-2 rounded-xl">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-xs text-slate-400">Selecciona qué días deseas exportar. Puedes exportar el plan completo o elegir un día en específico.</p>
+                <button onclick="confirmExport('all')" class="w-full bg-lime-400 hover:bg-lime-500 text-slate-950 font-bold py-3 rounded-xl transition-all shadow-lg shadow-lime-500/20 flex items-center justify-center gap-2">
+                    <i data-lucide="copy-check" class="w-4 h-4"></i> Exportar Todos los Días
+                </button>
+                <div class="relative mt-4">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-white/10"></div>
+                    </div>
+                    <div class="relative flex justify-center text-[10px] font-bold">
+                        <span class="px-2 bg-slate-900 text-slate-500 uppercase tracking-wider">O selecciona un día</span>
+                    </div>
+                </div>
+                <select id="export-day-select" class="w-full bg-slate-950/50 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold text-white focus:outline-none focus:border-lime-500/50 transition-colors">
+                    <!-- Options inyectadas dinámicamente -->
+                </select>
+                <button onclick="confirmExport('single')" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl transition-colors border border-white/5 flex items-center justify-center gap-2">
+                    <i data-lucide="file-output" class="w-4 h-4"></i> Exportar Día Seleccionado
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Configuración de Supabase
         const SUPABASE_URL = 'https://maivzxzljgfqiqkvbspd.supabase.co';
@@ -1149,6 +1247,7 @@
             watermark: false,
             watermarkOpacity: 5
         };
+        let coachTemplates = [];
 
         // Cargar inmediatamente desde LocalStorage para evitar parpadeos
         try {
@@ -1159,6 +1258,10 @@
                 if (parsed.logoUrl) coachPdfSettings.logoUrl = parsed.logoUrl;
                 if (parsed.watermark !== undefined) coachPdfSettings.watermark = parsed.watermark;
                 if (parsed.watermarkOpacity !== undefined) coachPdfSettings.watermarkOpacity = parsed.watermarkOpacity;
+            }
+            const cachedTemplates = localStorage.getItem('coach_templates');
+            if (cachedTemplates) {
+                coachTemplates = JSON.parse(cachedTemplates);
             }
         } catch(e) { console.warn("Error leyendo settings de localStorage", e); }
 
@@ -1271,6 +1374,7 @@
             // 1. Guardar siempre en LocalStorage (inmediato y persistente)
             try {
                 localStorage.setItem('coach_pdf_settings', JSON.stringify(coachPdfSettings));
+                if (coachTemplates) localStorage.setItem('coach_templates', JSON.stringify(coachTemplates));
             } catch(e) { console.warn("Error guardando settings en localStorage", e); }
 
             // 2. Guardar en Supabase en el perfil del usuario actual (no de los alumnos)
@@ -1278,13 +1382,18 @@
             if (!userData?.user) return;
             
             try {
-                await _supabase.from('profiles')
+                const { error: updateError } = await _supabase.from('profiles')
                     .update({ 
                         pdf_theme: coachPdfSettings.theme,
-                        logo_url: coachPdfSettings.logoUrl 
+                        logo_url: coachPdfSettings.logoUrl,
+                        plantillas_rutina: coachTemplates
                     })
                     .eq('coach_id', userData.user.id)
                     .neq('role', 'alumno');
+                    
+                if (updateError) {
+                    console.error("Supabase devolvió un error al actualizar perfil:", updateError);
+                }
             } catch (err) {
                 console.warn("Error actualizando perfil en Supabase:", err);
             }
@@ -1303,7 +1412,7 @@
             // Cargar preferencias del coach desde Supabase (perfil del coach/user, no alumno)
             const { data: coachProfiles, error } = await _supabase
                 .from('profiles')
-                .select('pdf_theme, logo_url, role')
+                .select('pdf_theme, logo_url, role, plantillas_rutina')
                 .eq('coach_id', authData.user.id)
                 .neq('role', 'alumno')
                 .limit(1);
@@ -1312,6 +1421,8 @@
             if (coachProfile) {
                 if (coachProfile.pdf_theme) coachPdfSettings.theme = coachProfile.pdf_theme;
                 if (coachProfile.logo_url) coachPdfSettings.logoUrl = coachProfile.logo_url;
+                if (coachProfile.plantillas_rutina) coachTemplates = coachProfile.plantillas_rutina;
+                
                 setPdfTheme(coachPdfSettings.theme);
                 updateLogoUIPref(coachPdfSettings.logoUrl);
                 updateWatermarkUI();
@@ -3007,7 +3118,42 @@
             }
         };
 
-        async function exportPlanToPDF() {
+        let pendingExportType = null;
+        function handleExportClick(type) {
+            if (currentMode === 'rutina' && currentStudent && currentStudent.dias_rutina > 1) {
+                pendingExportType = type;
+                
+                const select = document.getElementById('export-day-select');
+                let optionsHtml = '';
+                for (let i = 1; i <= currentStudent.dias_rutina; i++) {
+                    optionsHtml += `<option value="${i}">Día ${i}</option>`;
+                }
+                select.innerHTML = optionsHtml;
+                
+                openModal('modal-export-day-selector');
+            } else {
+                confirmExport('all', type);
+            }
+        }
+
+        function confirmExport(dayOption, typeOverride = null) {
+            const type = typeOverride || pendingExportType;
+            closeModal('modal-export-day-selector');
+            
+            let targetDay = 'all';
+            if (dayOption === 'single') {
+                targetDay = document.getElementById('export-day-select').value;
+            }
+            // Usamos setTimeout para permitir que la interfaz se actualice (cerrar modal)
+            // antes de que html2pdf bloquee el hilo principal
+            setTimeout(() => {
+                if (type === 'pdf') exportPlanToPDF(targetDay);
+                else if (type === 'whatsapp') exportToWhatsApp(targetDay);
+                else if (type === 'image') exportToImage(targetDay);
+            }, 100);
+        }
+
+        async function exportPlanToPDF(targetDay = 'all') {
             if (!selectedStudentId) return alert("Selecciona un alumno primero");
             
             const name = currentStudent ? currentStudent.full_name : 'Alumno';
@@ -3053,13 +3199,16 @@
                         <div>
                             <p style="font-size: 10px; font-weight: 800; color: #bef264; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 2px;">Plan de Rutina Nutricional</p>
                             <h1 style="font-size: 32px; font-weight: 800; margin: 0; letter-spacing: -1.5px; color: ${textColor};">${name}</h1>
-                            <p style="font-size: 13px; color: ${secondaryTextColor}; margin-top: 4px;">Por <b>${coachName}</b> • Plan de ${totalDays} Días</p>
+                            <p style="font-size: 13px; color: ${secondaryTextColor}; margin-top: 4px;">Por <b>${coachName}</b> &nbsp;&nbsp;|&nbsp;&nbsp; Plan de ${targetDay === 'all' ? totalDays + ' Días' : '1 Día (Día ' + targetDay + ')'}</p>
                         </div>
                         ${coachPdfSettings.logoUrl ? `<img src="${coachPdfSettings.logoUrl}" style="max-width: 120px; max-height: 80px; object-fit: contain;">` : '<div style="width: 40px; height: 40px; background: #bef264; border-radius: 12px;"></div>'}
                     </div>
                 `;
 
-                for (let d = 1; d <= totalDays; d++) {
+                const startDay = targetDay === 'all' ? 1 : parseInt(targetDay);
+                const endDay = targetDay === 'all' ? totalDays : parseInt(targetDay);
+
+                for (let d = startDay; d <= endDay; d++) {
                     const dayData = groupedData[d];
                     const kcalRaw = dayData.cal.toLocaleString();
                     const targetKcal = selectedStudentCalories || 2000;
@@ -3086,7 +3235,7 @@
                     });
 
                     html += `
-                        <div style="position: relative; overflow: hidden; border-radius: 20px; ${d > 1 ? 'page-break-before: always;' : ''} margin-bottom: 40px; border-top: ${d > 1 ? `2px dashed ${borderColor}` : 'none'}; padding-top: ${d > 1 ? '30px' : '0'};">
+                        <div style="position: relative; overflow: hidden; border-radius: 20px; ${d > startDay ? 'page-break-before: always;' : ''} margin-bottom: 40px; border-top: ${d > startDay ? `2px dashed ${borderColor}` : 'none'}; padding-top: ${d > startDay ? '30px' : '0'};">
                             ${getWatermarkHtml()}
                             <div style="position: relative; z-index: 1;">
                                 <h2 style="font-size: 24px; font-weight: 900; margin-bottom: 20px; color: #bef264; text-transform: uppercase;">
@@ -3356,7 +3505,7 @@
 
             const opt = {
                 margin: 0,
-                filename: `Plan_${studentNameFile}_${currentMode === 'rutina' ? 'Rutina' : date}.pdf`,
+                filename: `Plan_${studentNameFile}_${currentMode === 'rutina' ? 'Rutina' : currentPlanDate}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
                     scale: 2, 
@@ -3373,6 +3522,116 @@
             } catch (err) { console.error("Error PDF:", err); }
         }
 
+        function toggleTemplateMenu() {
+            const menu = document.getElementById('template-menu');
+            if (menu) menu.classList.toggle('hidden');
+        }
+
+        async function saveCurrentDayAsTemplate() {
+            const nameInput = document.getElementById('template-name-input').value.trim();
+            if (!nameInput) return alert('Por favor, ingresa un nombre para la plantilla.');
+            if (!selectedStudentId || currentMode !== 'rutina') return;
+
+            // Obtener los datos actuales del día desde Supabase para guardarlos intactos
+            const [mealsRes, suppsRes, notesRes] = await Promise.all([
+                _supabase.from('comidas').select('*').eq('alumno_id', selectedStudentId).eq('dia_rutina', selectedRoutineDay),
+                _supabase.from('suplementos').select('*').eq('alumno_id', selectedStudentId).eq('dia_rutina', selectedRoutineDay),
+                _supabase.from('notas').select('*').eq('alumno_id', selectedStudentId).eq('dia_rutina', selectedRoutineDay)
+            ]);
+
+            const newTemplate = {
+                id: 'template_' + Date.now(),
+                name: nameInput,
+                meals: (mealsRes.data || []).map(m => {
+                    const { id, alumno_id, created_at, dia_rutina, fecha, ...rest } = m;
+                    return rest;
+                }),
+                supplements: (suppsRes.data || []).map(s => {
+                    const { id, alumno_id, created_at, dia_rutina, fecha, ...rest } = s;
+                    return rest;
+                }),
+                notes: (notesRes.data || []).map(n => {
+                    const { id, alumno_id, created_at, dia_rutina, fecha, ...rest } = n;
+                    return rest;
+                })
+            };
+
+            if (!coachTemplates) coachTemplates = [];
+            coachTemplates.push(newTemplate);
+            await saveCoachPreferences();
+
+            document.getElementById('template-name-input').value = '';
+            closeModal('modal-save-template');
+            alert('¡Plantilla guardada exitosamente!');
+        }
+
+        function openLoadTemplateModal() {
+            const container = document.getElementById('template-list-container');
+            if (!coachTemplates || coachTemplates.length === 0) {
+                container.innerHTML = '<p class="text-sm text-slate-500 text-center py-8">No tienes plantillas guardadas aún.</p>';
+            } else {
+                container.innerHTML = coachTemplates.map(t => `
+                    <div class="bg-slate-800/50 rounded-2xl p-4 border border-white/5 flex items-center justify-between mb-3 hover:bg-slate-800 transition-colors">
+                        <div>
+                            <h4 class="text-sm font-bold text-white mb-1">${t.name}</h4>
+                            <p class="text-[10px] text-slate-400 font-medium">${t.meals.length} comidas, ${t.supplements.length} suplementos, ${t.notes.length} notas</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="loadTemplateIntoDay('${t.id}')" class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 p-2 rounded-xl transition-colors" title="Cargar">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="deleteTemplate('${t.id}')" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 p-2 rounded-xl transition-colors" title="Eliminar">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            }
+            openModal('modal-load-template');
+        }
+
+        async function deleteTemplate(id) {
+            if (!confirm('¿Seguro que deseas eliminar esta plantilla?')) return;
+            coachTemplates = coachTemplates.filter(t => t.id !== id);
+            await saveCoachPreferences();
+            openLoadTemplateModal(); // refrescar lista
+        }
+
+        async function loadTemplateIntoDay(id) {
+            if (!selectedStudentId || currentMode !== 'rutina') return;
+            const t = coachTemplates.find(x => x.id === id);
+            if (!t) return;
+            
+            if (!confirm(`Se inyectarán los datos de la plantilla "${t.name}" al Día ${selectedRoutineDay}. ¿Deseas continuar?`)) return;
+
+            const newMeals = t.meals.map(m => ({ ...m, alumno_id: selectedStudentId, dia_rutina: selectedRoutineDay, fecha: null }));
+            const newSupps = t.supplements.map(s => ({ ...s, alumno_id: selectedStudentId, dia_rutina: selectedRoutineDay, fecha: null }));
+            const newNotes = t.notes.map(n => ({ ...n, alumno_id: selectedStudentId, dia_rutina: selectedRoutineDay, fecha: null }));
+
+            let errors = [];
+            
+            if (newMeals.length > 0) {
+                const { error } = await _supabase.from('comidas').insert(newMeals);
+                if (error) errors.push(error.message);
+            }
+            if (newSupps.length > 0) {
+                const { error } = await _supabase.from('suplementos').insert(newSupps);
+                if (error) errors.push(error.message);
+            }
+            if (newNotes.length > 0) {
+                const { error } = await _supabase.from('notas').insert(newNotes);
+                if (error) errors.push(error.message);
+            }
+
+            if (errors.length > 0) {
+                alert('Hubo errores al cargar la plantilla: ' + errors.join(', '));
+            } else {
+                closeModal('modal-load-template');
+                fetchStudentData(); // Refrescar el día actual con los nuevos datos
+            }
+        }
+
         function toggleExportMenu() {
             const menu = document.getElementById('export-menu');
             menu.classList.toggle('hidden');
@@ -3387,7 +3646,7 @@
             }
         });
 
-        async function exportToWhatsApp() {
+        async function exportToWhatsApp(targetDay = 'all') {
             if (!selectedStudentId || !currentStudent) return alert("Selecciona un alumno primero");
             
             let text = `*⭐ POWERPLAN PRO - PLAN NUTRICIONAL*\n`;
@@ -3401,7 +3660,10 @@
                 const rawData = await fetchAllRoutineData(selectedStudentId);
                 const groupedData = groupRoutineDataByDay(rawData, totalDays);
 
-                for (let d = 1; d <= totalDays; d++) {
+                const startDay = targetDay === 'all' ? 1 : parseInt(targetDay);
+                const endDay = targetDay === 'all' ? totalDays : parseInt(targetDay);
+
+                for (let d = startDay; d <= endDay; d++) {
                     const dayData = groupedData[d];
                     const kcal = dayData.cal.toLocaleString();
                     const p = Math.round(dayData.p);
@@ -3515,7 +3777,7 @@
             window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
         }
 
-        async function exportToImage() {
+        async function exportToImage(targetDay = 'all') {
             if (!selectedStudentId || !currentStudent) return alert("Selecciona un alumno primero");
             
             const isDark = coachPdfSettings.theme === 'dark';
@@ -3551,13 +3813,16 @@
                         <div>
                             <p style="font-size: 10px; font-weight: 800; color: #bef264; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 2px;">Plan de Rutina Nutricional</p>
                             <h1 style="font-size: 32px; font-weight: 800; margin: 0; letter-spacing: -1.5px; color: ${textColor};">${name}</h1>
-                            <p style="font-size: 13px; color: ${secondaryTextColor}; margin-top: 4px;">Por <b>${coachName}</b> • Plan de ${totalDays} Días</p>
+                            <p style="font-size: 13px; color: ${secondaryTextColor}; margin-top: 4px;">Por <b>${coachName}</b> &nbsp;&nbsp;|&nbsp;&nbsp; Plan de ${targetDay === 'all' ? totalDays + ' Días' : '1 Día (Día ' + targetDay + ')'}</p>
                         </div>
                         ${coachPdfSettings.logoUrl ? `<img src="${coachPdfSettings.logoUrl}" style="max-width: 120px; max-height: 80px; object-fit: contain;">` : '<div style="width: 40px; height: 40px; background: #bef264; border-radius: 12px;"></div>'}
                     </div>
                 `;
 
-                for (let d = 1; d <= totalDays; d++) {
+                const startDay = targetDay === 'all' ? 1 : parseInt(targetDay);
+                const endDay = targetDay === 'all' ? totalDays : parseInt(targetDay);
+
+                for (let d = startDay; d <= endDay; d++) {
                     const dayData = groupedData[d];
                     const kcalRaw = dayData.cal.toLocaleString();
                     const targetKcal = selectedStudentCalories || 2000;
@@ -3584,7 +3849,7 @@
                     });
 
                     html += `
-                        <div style="margin-bottom: 40px; border-top: ${d > 1 ? `2px dashed ${borderColor}` : 'none'}; padding-top: ${d > 1 ? '30px' : '0'};">
+                        <div style="margin-bottom: 40px; border-top: ${d > startDay ? `2px dashed ${borderColor}` : 'none'}; padding-top: ${d > startDay ? '30px' : '0'};">
                             <h2 style="font-size: 24px; font-weight: 900; margin-bottom: 20px; color: #bef264; text-transform: uppercase;">
                                 DÍA ${d}
                             </h2>
